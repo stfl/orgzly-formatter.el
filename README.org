@@ -85,3 +85,10 @@ Then run =doom sync= and restart Emacs.
 #+begin_src emacs-lisp
 M-x orgzly-formatter-buffer
 #+end_src
+
+** Disable conflicting ws-butler mode in org-mode buffers
+
+#+begin_src emacs-lisp
+(with-eval-after-load 'ws-butler
+  (add-to-list 'ws-butler-global-exempt-modes 'org-mode))
+#+end_src
