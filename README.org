@@ -40,6 +40,12 @@ preferred format.  Orgzly then has nothing to change.
 | *WS*   | Trailing whitespace stripped from every line. Exception: =* NEXT = (keyword-only heading with a single trailing space) is preserved — org needs it. |
 | *EOF*  | Buffer ends with exactly one blank line.                                                                                                            |
 
+Formatting in Orgzly can be changed via Settings -> Sync -> Org file format.
+This package considers the default settings of:
+
+- Separate note with an empty line :: Multiline notes only
+- Separate header and content :: true
+
 * Requirements
 
 - Emacs 27.1+
@@ -92,3 +98,4 @@ M-x orgzly-formatter-buffer
 (with-eval-after-load 'ws-butler
   (add-to-list 'ws-butler-global-exempt-modes 'org-mode))
 #+end_src
+
