@@ -1,0 +1,87 @@
+#+title: orgzly-formatter
+#+author: Stefan Lendl
+#+email: s@stfl.dev
+#+language: en
+
+[[https://github.com/stfl/orgzly-formatter/actions/workflows/ci.yml][https://github.com/stfl/orgzly-formatter/actions/workflows/ci.yml/badge.svg]]
+
+When using [[https://www.orgzlyrevived.com/][Orgzly Revived]] with the git repository features on Android and
+git-sync on other machines, format changes by Orgzly to the underlying
+org file cause frequent merge conflicts.
+
+Enforces blank-line and whitespace conventions that keep org files *byte-for-byte
+identical between Emacs and Orgzly Revived* (the Android org client), eliminating
+spurious git diffs produced by Orgzly's own auto-formatter.
+
+* The problem
+
+Orgzly silently reformats org files on every edit. Even for entries not changed
+by Orgzly:
+
+- Adds a blank line after entries that have content
+- Adds a blank line after entries that have only a properties drawer
+- Removes extra trailing blank lines at end-of-file
+
+Each of these appears as a one-line diff in git, causing merge conflicts when
+the same file is edited in both Emacs and Orgzly.
+
+* The solution
+
+=orgzly-formatter= runs as a =before-save-hook= and pre-emptively applies the
+same rules Orgzly would, so the files Emacs writes are already in Orgzly's
+preferred format.  Orgzly then has nothing to change.
+
+* Rules
+
+| Rule | Description                                                                                                                                         |
+|------+-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| *R1*   | Exactly one blank line before each heading (except at buffer start). A heading immediately preceded by another empty heading gets no blank line.    |
+| *R3*   | Exactly one blank line at the end of every entry that has content (planning, drawer, or body). Heading-only entries get no trailing blank.          |
+| *WS*   | Trailing whitespace stripped from every line. Exception: =* NEXT = (keyword-only heading with a single trailing space) is preserved — org needs it. |
+| *EOF*  | Buffer ends with exactly one blank line.                                                                                                            |
+
+* Requirements
+
+- Emacs 27.1+
+- Org 9.0+
+
+* Installation
+** straight.el + use-package
+
+#+begin_src emacs-lisp
+(use-package orgzly-formatter
+  :straight (:host github :repo "stfl/orgzly-formatter.el")
+  :hook (org-mode . orgzly-formatter-mode))
+#+end_src
+
+** Doom Emacs
+
+In =packages.el=:
+
+#+begin_src emacs-lisp
+(package! orgzly-formatter
+  :recipe (:host github :repo "stfl/orgzly-formatter.el"))
+#+end_src
+
+In =config.el=:
+
+#+begin_src emacs-lisp
+(use-package! orgzly-formatter
+  :hook (org-mode . orgzly-formatter-mode))
+#+end_src
+
+Then run =doom sync= and restart Emacs.
+
+* Configuration
+** Enable globally (recommended)
+
+#+begin_src emacs-lisp
+;; Activates orgzly-formatter-mode in every org-mode buffer via hook.
+(orgzly-formatter-global-setup)
+#+end_src
+
+** Run once without the mode
+
+#+begin_src emacs-lisp
+M-x orgzly-formatter-buffer
+#+end_src
