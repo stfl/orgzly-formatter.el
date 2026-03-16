@@ -3,7 +3,7 @@
 #+email: s@stfl.dev
 #+language: en
 
-[[https://github.com/stfl/orgzly-formatter/actions/workflows/ci.yml][https://github.com/stfl/orgzly-formatter/actions/workflows/ci.yml/badge.svg]]
+[[https://github.com/stfl/orgzly-formatter.el/actions/workflows/ci.yml][https://github.com/stfl/orgzly-formatter.el/actions/workflows/ci.yml/badge.svg]]
 
 When using [[https://www.orgzlyrevived.com/][Orgzly Revived]] with the git repository features on Android and
 git-sync on other machines, format changes by Orgzly to the underlying
