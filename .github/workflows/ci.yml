@@ -28,5 +28,8 @@ jobs:
       - name: Byte-compile
         run: make compile
 
+      - name: Lint
+        run: make lint
+
       - name: Run ERT tests
         run: make test
