@@ -21,7 +21,9 @@ test:
 lint:
 	$(BATCH) -L . \
 	  --eval "(require 'package)" \
+	  --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
 	  --eval "(package-initialize)" \
+	  --eval "(unless (package-installed-p 'package-lint) (package-refresh-contents) (package-install 'package-lint))" \
 	  --eval "(require 'package-lint)" \
 	  -f package-lint-batch-and-exit $(EL)
 
