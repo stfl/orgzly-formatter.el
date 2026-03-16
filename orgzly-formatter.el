@@ -47,20 +47,6 @@
 ;; Run once without the mode:
 ;;   M-x orgzly-formatter-buffer
 ;;
-;; ─── Compatibility ────────────────────────────────────────────────────────────
-;;
-;; Installable via straight.el, elpaca, or package.el (with a custom recipe).
-;; See README.md for use-package and Doom Emacs snippets.
-;;
-;; ws-butler-mode conflict:
-;;   ws-butler strips trailing spaces on save, which corrupts keyword-only
-;;   headings like "* NEXT " that org-mode requires to have exactly one
-;;   trailing space.  Exclude org-mode from ws-butler's global mode:
-;;
-;;   (~/.doom.d/config.el or init.el):
-;;     (eval-after-load 'ws-butler
-;;       '(add-to-list 'ws-butler-global-exempt-modes 'org-mode))
-
 ;;; Code:
 
 (require 'org)
@@ -178,21 +164,6 @@ Called once per heading by `org-map-entries'."
      ((not (looking-back "\n\n" nil))
       (insert "\n")))))
 
-;;;; ── Compatibility checks ───────────────────────────────────────────────────
-
-(defun orgzly-formatter--check-conflicting-modes ()
-  "Warn if any whitespace-mangling minor modes are active in the current buffer.
-These modes strip trailing spaces on save, which corrupts keyword-only org
-headings like \"* NEXT \" that require exactly one trailing space."
-  (dolist (entry '((ws-butler-mode . "ws-butler-mode")))
-    (when (and (boundp (car entry)) (symbol-value (car entry)))
-      (display-warning 'orgzly-formatter
-                       (format "%s is active in this buffer. \
-It will strip trailing spaces on save, breaking keyword-only headings \
-like \"* NEXT \". Disable %s in org-mode buffers."
-                               (cdr entry) (cdr entry))
-                       :warning))))
-
 ;;;; ── Public API ──────────────────────────────────────────────────────────────
 
 ;;;###autoload
@@ -221,15 +192,14 @@ Adds `orgzly-formatter-buffer' to `before-save-hook' buffer-locally."
   (if orgzly-formatter-mode
       (progn
         (add-hook 'before-save-hook #'orgzly-formatter-buffer nil t)
-        (orgzly-formatter--check-conflicting-modes))
-    (remove-hook 'before-save-hook #'orgzly-formatter-buffer t)))
+        (remove-hook 'before-save-hook #'orgzly-formatter-buffer t)))
 
 ;;;###autoload
-(defun orgzly-formatter-global-setup ()
-  "Enable `orgzly-formatter-mode' in every org-mode buffer.
+  (defun orgzly-formatter-global-setup ()
+    "Enable `orgzly-formatter-mode' in every org-mode buffer.
 Call once in your init file:
   (orgzly-formatter-global-setup)"
-  (add-hook 'org-mode-hook #'orgzly-formatter-mode))
+    (add-hook 'org-mode-hook #'orgzly-formatter-mode))
 
-(provide 'orgzly-formatter)
+  (provide 'orgzly-formatter)
 ;;; orgzly-formatter.el ends here
