@@ -190,16 +190,15 @@ produces no changes.  Safe to call from `before-save-hook'."
 Adds `orgzly-formatter-buffer' to `before-save-hook' buffer-locally."
   :lighter " orgzly-fmt"
   (if orgzly-formatter-mode
-      (progn
-        (add-hook 'before-save-hook #'orgzly-formatter-buffer nil t)
-        (remove-hook 'before-save-hook #'orgzly-formatter-buffer t)))
+      (add-hook 'before-save-hook #'orgzly-formatter-buffer nil t)
+    (remove-hook 'before-save-hook #'orgzly-formatter-buffer t)))
 
 ;;;###autoload
-  (defun orgzly-formatter-global-setup ()
-    "Enable `orgzly-formatter-mode' in every org-mode buffer.
+(defun orgzly-formatter-global-setup ()
+  "Enable `orgzly-formatter-mode' in every org-mode buffer.
 Call once in your init file:
   (orgzly-formatter-global-setup)"
-    (add-hook 'org-mode-hook #'orgzly-formatter-mode))
+  (add-hook 'org-mode-hook #'orgzly-formatter-mode))
 
-  (provide 'orgzly-formatter)
+(provide 'orgzly-formatter)
 ;;; orgzly-formatter.el ends here
