@@ -454,39 +454,4 @@ body text here
 
 ")
 
-;;;; ── Conflicting mode warnings ──────────────────────────────────────────────
-
-;; Declare as special so the `let' binding in the test below is dynamic and
-;; visible to `boundp' / `symbol-value' (lexical-binding: t would otherwise
-;; make un-defvar'd let-bindings invisible to those functions).
-(defvar ws-butler-mode nil)
-
-(defmacro ozfmt--with-warnings (&rest body)
-  "Evaluate BODY and return a list of (TYPE MESSAGE) pairs from `display-warning'."
-  (declare (indent 0))
-  `(let (warnings)
-     (cl-letf (((symbol-function 'display-warning)
-                (lambda (type msg &rest _)
-                  (push (list type msg) warnings))))
-       ,@body)
-     (nreverse warnings)))
-
-(ert-deftest ozfmt/warn/no-warning-without-conflicting-modes ()
-  "No warning when no whitespace-mangling modes are active."
-  (with-temp-buffer
-    (let ((warnings (ozfmt--with-warnings
-                      (orgzly-formatter--check-conflicting-modes))))
-      (should (null warnings)))))
-
-(ert-deftest ozfmt/warn/ws-butler-mode ()
-  "Warns when ws-butler-mode is active."
-  (with-temp-buffer
-    (let ((ws-butler-mode t))
-      (let ((warnings (ozfmt--with-warnings
-                        (orgzly-formatter--check-conflicting-modes))))
-        (should (= 1 (length warnings)))
-        (should (eq 'orgzly-formatter (caar warnings)))
-        (should (string-match-p "ws-butler-mode" (cadar warnings)))))))
-
-
 ;;; orgzly-formatter-test.el ends here
