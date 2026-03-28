@@ -25,6 +25,11 @@ jobs:
         with:
           version: ${{ matrix.emacs-version }}
 
+      - name: Install Eask
+        uses: emacs-eask/setup-eask@master
+        with:
+          version: snapshot
+
       - name: Install just
         uses: extractions/setup-just@v2
 
