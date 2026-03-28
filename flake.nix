@@ -23,13 +23,13 @@
           lint = {
             enable = true;
             name = "lint";
-            entry = "make lint";
+            entry = "just lint";
             pass_filenames = false;
           };
           tests = {
             enable = true;
             name = "tests";
-            entry = "make test";
+            entry = "just test";
             pass_filenames = false;
           };
         };
@@ -38,6 +38,9 @@
           packages = with pkgs; [
             # Emacs
             emacs
+
+            # Task runner
+            just
 
             # CI runner
             act

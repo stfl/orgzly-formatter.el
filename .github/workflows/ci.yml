@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         emacs-version:
-          - "29.3"
+          - "29.4"
           - "30.2"
 
     steps:
@@ -25,11 +25,14 @@ jobs:
         with:
           version: ${{ matrix.emacs-version }}
 
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - name: Byte-compile
-        run: make compile
+        run: just compile
 
       - name: Lint
-        run: make lint
+        run: just lint
 
       - name: Run ERT tests
-        run: make test
+        run: just test
