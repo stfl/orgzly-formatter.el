@@ -36,8 +36,9 @@
 
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            # Emacs
+            # Emacs / eask
             emacs
+            eask-cli
 
             # Task runner
             just
