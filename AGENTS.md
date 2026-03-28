@@ -6,13 +6,13 @@ This file provides guidance to Coding agents like Claude Code when working with 
 
 ```sh
 # Byte-compile the package
-make compile
+just compile
 
 # Run the full ERT test suite
-make test
+just test
 
 # Run both (default)
-make
+just
 
 # Run a subset of tests by name prefix
 emacs -batch -Q -L . \
@@ -21,10 +21,10 @@ emacs -batch -Q -L . \
   --eval '(ert-run-tests-batch "ozfmt/regression")'
 
 # Lint with package-lint (requires package-lint installed)
-make lint
+just lint
 
 # Clean byte-compiled output
-make clean
+just clean
 ```
 
 ## Architecture
