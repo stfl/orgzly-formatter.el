@@ -21,6 +21,11 @@
 ;;        A heading immediately preceded by another heading (empty subtree) has
 ;;        surplus blank lines stripped rather than added.
 ;;
+;;   R2.  One blank line between a drawer :END: and following body text.
+;;        When an :END: line is immediately followed by non-blank body text
+;;        (not a heading, not another drawer), one blank line is inserted.
+;;        A drawer that ends a section (no body follows) is left unchanged.
+;;
 ;;   R3.  Exactly one blank line at the END of every entry that has content.
 ;;        "Content" = any non-blank line that follows the heading: planning
 ;;        lines, property drawers, and/or body text.  A heading-only entry
@@ -145,6 +150,19 @@ Called once per heading by `org-map-entries'."
   ;; under point, leaving the last entry and others outside it unfixed).
   (org-map-entries #'orgzly-formatter--fix-entry t nil))
 
+(defun orgzly-formatter--fix-drawer-separation ()
+  "Apply R2: insert a blank line after drawer :END: when followed by body text.
+Body text means any non-blank line that is neither a heading nor a drawer line."
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "^:END:\n" nil t)
+      ;; Point is now at the start of the line immediately after :END:.
+      (when (and (not (eobp))
+                 (not (looking-at-p "^[ \t]*$"))  ; already has blank
+                 (not (looking-at-p "^\\*"))        ; not a heading
+                 (not (looking-at-p "^:")))         ; not another drawer line
+        (insert "\n")))))
+
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."
   (save-excursion
@@ -173,13 +191,15 @@ Called once per heading by `org-map-entries'."
 Applies, in order:
   1. `orgzly-formatter--strip-trailing-whitespace'  (WS rule)
   2. `orgzly-formatter--fix-blank-lines'            (R1 + R3 per heading)
-  3. `orgzly-formatter--fix-eof'                    (EOF rule)
+  3. `orgzly-formatter--fix-drawer-separation'      (R2 per drawer)
+  4. `orgzly-formatter--fix-eof'                    (EOF rule)
 
 The function is idempotent: running it on an already-correct buffer
 produces no changes.  Safe to call from `before-save-hook'."
   (interactive)
   (orgzly-formatter--strip-trailing-whitespace)
   (orgzly-formatter--fix-blank-lines)
+  (orgzly-formatter--fix-drawer-separation)
   (orgzly-formatter--fix-eof)
   (when (called-interactively-p 'interactive)
     (message "orgzly-formatter: buffer formatted")))

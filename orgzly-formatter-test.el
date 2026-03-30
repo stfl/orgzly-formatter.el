@@ -346,6 +346,110 @@ body
 * EmptyAtEnd
 ")
 
+;;;; ── R2: blank between drawer and body ──────────────────────────────────────
+
+(ozfmt-deftest ozfmt/r2/blank-inserted-after-drawer
+               "R2: a blank line is inserted between :END: and immediately-following body text."
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+body text
+* Next
+"
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+
+body text
+
+* Next
+")
+
+(ozfmt-deftest ozfmt/r2/already-present-unchanged
+               "R2: when a blank already follows :END:, nothing changes (idempotent)."
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+
+body text
+
+* Next
+"
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+
+body text
+
+* Next
+")
+
+(ozfmt-deftest ozfmt/r2/drawer-only-no-blank
+               "R2 does not fire when :END: is followed by a heading; R3 supplies the blank."
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+* Next
+"
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+
+* Next
+")
+
+(ozfmt-deftest ozfmt/r2/planning-drawer-body
+               "R2: planning line + drawer + body text — blank inserted after :END: before body."
+               "* H
+SCHEDULED: <2026-03-16 Mo>
+:PROPERTIES:
+:ID: x
+:END:
+body text
+* Next
+"
+               "* H
+SCHEDULED: <2026-03-16 Mo>
+:PROPERTIES:
+:ID: x
+:END:
+
+body text
+
+* Next
+")
+
+(ozfmt-deftest ozfmt/r2/multiple-drawers-blank-only-after-last
+               "R2: two consecutive drawers — blank inserted only after the last :END:, not between them."
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+:LOGBOOK:
+- Note
+:END:
+body text
+* Next
+"
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+:LOGBOOK:
+- Note
+:END:
+
+body text
+
+* Next
+")
+
 ;;;; ── Idempotency ─────────────────────────────────────────────────────────────
 
 (ert-deftest ozfmt/idempotent/already-formatted-buffer ()
