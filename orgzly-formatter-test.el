@@ -199,6 +199,20 @@ body text
 * Next
 ")
 
+(ozfmt-deftest ozfmt/content/body-ends-with-bold-text
+               "When the last line of the body ends with Org markup (e.g. bold), the trailing blank is still added after it, not stripped as part of the markup."
+               "* H
+body text
+*bold test*
+* Next
+"
+               "* H
+body text
+*bold test*
+
+* Next
+")
+
 (ozfmt-deftest ozfmt/content/last-entry-with-body-gets-trailing-blank
                "The last entry in the file gets a trailing blank even with no next heading."
                "* A
