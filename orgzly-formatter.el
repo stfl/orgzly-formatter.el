@@ -119,7 +119,7 @@ Called once per heading by `org-map-entries'."
 
           ;; Case A — immediately preceded by a heading line (empty subtree).
           ;; Strip any surplus blanks; do NOT insert one.
-          ((looking-back "^\\*+[^\n]*\n+" nil)
+          ((looking-back "^\\*+ [^\n]*\n+" nil)
            (while (looking-back "\n\n" nil)
              (backward-char 1)
              (delete-char 1)))
@@ -169,7 +169,7 @@ Body text means any non-blank line that is neither a heading nor a drawer line."
     (goto-char (point-max))
     (cond
      ;; Empty heading at EOF: strip trailing blanks.
-     ((looking-back "^\\*+[^\n]*\n+" nil)
+     ((looking-back "^\\*+ [^\n]*\n+" nil)
       (while (looking-back "\n\n" nil)
         (backward-char 1)
         (delete-char 1)))
