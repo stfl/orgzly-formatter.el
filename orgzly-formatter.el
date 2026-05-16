@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 Stefan Lendl
 
-;; Author: Stefan Lendl <s@stfl.dev>
+;; Author: Stefan Lendl <git@stfl.dev>
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "27.1"))
 ;; Keywords: outlines, convenience, files
@@ -98,6 +98,19 @@ drawers (:PROPERTIES: … :END:), and any body text."
       ;; Still inside the entry? Then there is real content.
       (< (point) end))))
 
+(defun orgzly-formatter--prev-non-blank-is-heading-p ()
+  "Non-nil when the closest non-blank line BEFORE point is an org heading.
+Returns nil at start of buffer.  Detects an empty (heading-only) preceding
+entry — i.e., between the previous heading and point there is nothing but
+whitespace.  Used by R1 Case A and the EOF pass.
+
+Uses `org-at-heading-p' rather than matching `^\\*+ ' by hand so the
+detection follows org-mode's own grammar instead of an ad-hoc regex."
+  (save-excursion
+    (skip-chars-backward " \t\n")
+    (and (not (bobp))
+         (progn (beginning-of-line) (org-at-heading-p)))))
+
 ;;;; ── Formatting passes ───────────────────────────────────────────────────────
 
 (defun orgzly-formatter--strip-trailing-whitespace ()
@@ -129,7 +142,7 @@ Called once per heading by `org-map-entries'."
 
           ;; Case A — immediately preceded by a heading line (empty subtree).
           ;; Strip any surplus blanks; do NOT insert one.
-          ((looking-back "^\\*+ [^\n]*\n+" nil)
+          ((orgzly-formatter--prev-non-blank-is-heading-p)
            (while (looking-back "\n\n" nil)
              (backward-char 1)
              (delete-char 1)))
@@ -240,7 +253,7 @@ code block is not mistaken for a drawer terminator."
     (goto-char (point-max))
     (cond
      ;; Empty heading at EOF: strip trailing blanks.
-     ((looking-back "^\\*+ [^\n]*\n+" nil)
+     ((orgzly-formatter--prev-non-blank-is-heading-p)
       (while (looking-back "\n\n" nil)
         (backward-char 1)
         (delete-char 1)))
