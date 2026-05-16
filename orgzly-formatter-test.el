@@ -464,6 +464,39 @@ body text
 * Next
 ")
 
+(ozfmt-deftest ozfmt/r2/drawer-at-eof-no-spurious-blank
+               "R2: a drawer-only heading at end-of-file gets just the R3+EOF trailing blank — no extra blank after :END:."
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+"
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+
+")
+
+(ozfmt-deftest ozfmt/r2/indented-drawer-followed-by-body
+               "R2: an indented drawer (org-mode allows leading whitespace before :END:) is recognized via org-element."
+               "* H
+  :PROPERTIES:
+  :ID: x
+  :END:
+body text
+* Next
+"
+               "* H
+  :PROPERTIES:
+  :ID: x
+  :END:
+
+body text
+
+* Next
+")
+
 ;;;; ── R4: planning keyword order ─────────────────────────────────────────────
 
 (ozfmt-deftest ozfmt/r4/reorder-scheduled-deadline

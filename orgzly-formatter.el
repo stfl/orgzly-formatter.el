@@ -208,17 +208,31 @@ reformatting (e.g. `Su' → `So')."
                 (insert canonical)))))))))
 
 (defun orgzly-formatter--fix-drawer-separation ()
-  "Apply R2: insert a blank line after drawer :END: when followed by body text.
-Body text means any non-blank line that is neither a heading nor a drawer line."
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward "^:END:\n" nil t)
-      ;; Point is now at the start of the line immediately after :END:.
-      (when (and (not (eobp))
-                 (not (looking-at-p "^[ \t]*$"))  ; already has blank
-                 (not (looking-at-p "^\\*"))        ; not a heading
-                 (not (looking-at-p "^:")))         ; not another drawer line
-        (insert "\n")))))
+  "Apply R2: insert a blank line between a drawer's :END: and following body.
+
+Walks `drawer' and `property-drawer' elements via `org-element-map' on the
+parsed buffer.  The parser's `:post-blank' tells us whether a separator
+already exists (idempotency); `:end' gives the position of the line
+immediately after `:END:'.  At that position we use `org-at-heading-p'
+and `org-drawer-regexp' to skip drawers followed by a heading, another
+drawer, or EOF — those are covered by R3 and the EOF pass.
+
+Going through the parser (rather than matching `^:END:' by hand) means
+indented drawers are handled correctly and a literal `:END:' inside a
+code block is not mistaken for a drawer terminator."
+  (let ((ends (org-element-map (org-element-parse-buffer)
+                  '(drawer property-drawer)
+                (lambda (el)
+                  (when (zerop (or (org-element-property :post-blank el) 0))
+                    (copy-marker (org-element-property :end el)))))))
+    (dolist (m ends)
+      (save-excursion
+        (goto-char m)
+        (when (and (not (eobp))
+                   (not (org-at-heading-p))
+                   (not (looking-at-p org-drawer-regexp)))
+          (insert "\n")))
+      (set-marker m nil))))
 
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."
