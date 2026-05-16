@@ -464,6 +464,119 @@ body text
 * Next
 ")
 
+;;;; ── R4: planning keyword order ─────────────────────────────────────────────
+
+(ozfmt-deftest ozfmt/r4/reorder-scheduled-deadline
+               "R4: SCHEDULED before DEADLINE is reordered to DEADLINE then SCHEDULED."
+               "* NEXT USt Voranmeldung
+SCHEDULED: <2026-05-08 Fr +3m> DEADLINE: <2026-05-15 Fr +3m>
+:PROPERTIES:
+:ID: x
+:END:
+"
+               "* NEXT USt Voranmeldung
+DEADLINE: <2026-05-15 Fr +3m> SCHEDULED: <2026-05-08 Fr +3m>
+:PROPERTIES:
+:ID: x
+:END:
+
+")
+
+(ozfmt-deftest ozfmt/r4/already-canonical-unchanged
+               "R4: a planning line already in canonical order is unchanged (idempotent)."
+               "* H
+DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>
+body
+"
+               "* H
+DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>
+body
+
+")
+
+(ozfmt-deftest ozfmt/r4/all-three-keywords-reordered
+               "R4: SCHEDULED+DEADLINE+CLOSED in arbitrary order → CLOSED DEADLINE SCHEDULED."
+               "* DONE H
+SCHEDULED: <2026-02-26 Do> DEADLINE: <2026-03-01 Su> CLOSED: [2026-03-02 Mo 09:48]
+body
+"
+               "* DONE H
+CLOSED: [2026-03-02 Mo 09:48] DEADLINE: <2026-03-01 Su> SCHEDULED: <2026-02-26 Do>
+body
+
+")
+
+(ozfmt-deftest ozfmt/r4/multi-line-planning-left-alone
+               "R4: org-mode's grammar allows only a single planning line, so a stray
+second `KEYWORD:' line is treated as body text and not merged.  Neither
+org-mode nor Orgzly generates multi-line planning, so this case does not
+arise in practice."
+               "* H
+SCHEDULED: <2026-05-08 Fr>
+DEADLINE: <2026-05-15 Fr>
+body
+"
+               "* H
+SCHEDULED: <2026-05-08 Fr>
+DEADLINE: <2026-05-15 Fr>
+body
+
+")
+
+(ozfmt-deftest ozfmt/r4/normalize-extra-spaces
+               "R4: extra whitespace between tokens and after KEYWORD: is collapsed to single spaces."
+               "* H
+SCHEDULED:  <2026-05-08 Fr>    DEADLINE: <2026-05-15 Fr>
+"
+               "* H
+DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>
+
+")
+
+(ozfmt-deftest ozfmt/r4/preserves-indentation
+               "R4: leading indentation of the planning line is preserved."
+               "* H
+  SCHEDULED: <2026-05-08 Fr> DEADLINE: <2026-05-15 Fr>
+"
+               "* H
+  DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>
+
+")
+
+(ozfmt-deftest ozfmt/r4/timestamp-range-preserved
+               "R4: a SCHEDULED date range (--) round-trips intact when reordered."
+               "* H
+SCHEDULED: <2026-05-08 Fr>--<2026-05-10 Su> DEADLINE: <2026-05-15 Fr>
+"
+               "* H
+DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>--<2026-05-10 Su>
+
+")
+
+(ozfmt-deftest ozfmt/r4/single-keyword-unchanged
+               "R4: a single SCHEDULED line is left alone (already canonical)."
+               "* H
+SCHEDULED: <2026-05-08 Fr +3m>
+body
+"
+               "* H
+SCHEDULED: <2026-05-08 Fr +3m>
+body
+
+")
+
+(ozfmt-deftest ozfmt/r4/no-planning-info-unchanged
+               "R4: entries without planning info are not touched."
+               "* H
+body
+* Next
+"
+               "* H
+body
+
+* Next
+")
+
 ;;;; ── Idempotency ─────────────────────────────────────────────────────────────
 
 (ert-deftest ozfmt/idempotent/already-formatted-buffer ()

@@ -32,6 +32,15 @@
 ;;        (nothing between the heading and the next * or EOF) gets NO trailing
 ;;        blank line.
 ;;
+;;   R4.  Planning keywords normalized to Orgzly's canonical layout.
+;;        Any CLOSED / DEADLINE / SCHEDULED tokens on the line(s) directly
+;;        following a heading are rewritten as a single line in the order
+;;        `CLOSED DEADLINE SCHEDULED', separated by single spaces.  Org-mode
+;;        itself preserves whatever order the user typed; Orgzly's writer
+;;        (org-java's `OrgParserWriter.whiteSpacedHead') always emits this
+;;        canonical order, causing spurious diffs.  Indentation of the first
+;;        planning line is preserved.
+;;
 ;;   WS.  Trailing whitespace removed from every line.
 ;;        Exception: a heading whose only payload is a TODO keyword plus a
 ;;        single trailing space ("* NEXT ") keeps that space — org-mode needs
@@ -55,6 +64,7 @@
 ;;; Code:
 
 (require 'org)
+(require 'org-element)
 
 (defgroup orgzly-formatter nil
   "Orgzly-compatible blank-line and whitespace enforcement for org-mode."
@@ -150,6 +160,53 @@ Called once per heading by `org-map-entries'."
   ;; under point, leaving the last entry and others outside it unfixed).
   (org-map-entries #'orgzly-formatter--fix-entry t nil))
 
+(defun orgzly-formatter--fix-planning-order ()
+  "Apply R4: normalize planning info to Orgzly's canonical single-line layout.
+For each heading with planning info on the immediately-following line,
+rewrite it as one line in the canonical order
+`CLOSED DEADLINE SCHEDULED' with single-space separators, matching
+Orgzly's `OrgParserWriter.whiteSpacedHead'.  Indentation of the
+existing planning line is preserved.
+
+Detection uses the built-in `org-planning-line-re'; planning data is
+read from the headline element returned by `org-element-at-point',
+using each timestamp's `:raw-value' to avoid locale-dependent
+reformatting (e.g. `Su' → `So')."
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward org-heading-regexp nil t)
+      (let* ((el (org-element-at-point))
+             (clsd  (org-element-property :closed    el))
+             (deadl (org-element-property :deadline  el))
+             (sched (org-element-property :scheduled el)))
+        (when (or clsd deadl sched)
+          (forward-line 1)
+          (let ((planning-start (point))
+                (indent nil))
+            ;; Scan over the (single) planning line org-mode recognizes,
+            ;; capturing its indentation.  Org's grammar permits only one
+            ;; planning line; we follow that and leave any stray
+            ;; subsequent `KEYWORD:' lines as body text.
+            (when (looking-at org-planning-line-re)
+              (setq indent (buffer-substring-no-properties
+                            (line-beginning-position)
+                            (match-beginning 1)))
+              (forward-line 1))
+            (let* ((parts (delq nil
+                                (list (and clsd  (concat "CLOSED: "
+                                                         (org-element-property :raw-value clsd)))
+                                      (and deadl (concat "DEADLINE: "
+                                                         (org-element-property :raw-value deadl)))
+                                      (and sched (concat "SCHEDULED: "
+                                                         (org-element-property :raw-value sched))))))
+                   (canonical (concat (or indent "")
+                                      (mapconcat #'identity parts " ")
+                                      "\n"))
+                   (current (buffer-substring-no-properties planning-start (point))))
+              (unless (string= current canonical)
+                (delete-region planning-start (point))
+                (insert canonical)))))))))
+
 (defun orgzly-formatter--fix-drawer-separation ()
   "Apply R2: insert a blank line after drawer :END: when followed by body text.
 Body text means any non-blank line that is neither a heading nor a drawer line."
@@ -190,14 +247,16 @@ Body text means any non-blank line that is neither a heading nor a drawer line."
 
 Applies, in order:
   1. `orgzly-formatter--strip-trailing-whitespace'  (WS rule)
-  2. `orgzly-formatter--fix-blank-lines'            (R1 + R3 per heading)
-  3. `orgzly-formatter--fix-drawer-separation'      (R2 per drawer)
-  4. `orgzly-formatter--fix-eof'                    (EOF rule)
+  2. `orgzly-formatter--fix-planning-order'         (R4 per heading)
+  3. `orgzly-formatter--fix-blank-lines'            (R1 + R3 per heading)
+  4. `orgzly-formatter--fix-drawer-separation'      (R2 per drawer)
+  5. `orgzly-formatter--fix-eof'                    (EOF rule)
 
 The function is idempotent: running it on an already-correct buffer
 produces no changes.  Safe to call from `before-save-hook'."
   (interactive)
   (orgzly-formatter--strip-trailing-whitespace)
+  (orgzly-formatter--fix-planning-order)
   (orgzly-formatter--fix-blank-lines)
   (orgzly-formatter--fix-drawer-separation)
   (orgzly-formatter--fix-eof)

@@ -8,8 +8,9 @@ default: compile test
 compile:
     eask recompile
 
-# ERT tests
-test:
+# ERT tests.  Clean first so a stale .elc from a previous `just compile'
+# can't shadow uncommitted edits to the .el source.
+test: clean
     eask run script test
 
 # package-lint
