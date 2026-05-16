@@ -36,8 +36,9 @@
 
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            # Emacs / eask
-            emacs
+            # eask runs against the system emacs on PATH so devshell use
+            # doesn't shadow the user's emacs. CI installs emacs via
+            # purcell/setup-emacs and never enters this shell.
             eask-cli
 
             # Task runner
