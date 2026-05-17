@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  validate-tag:
+    name: Validate tag matches package version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Verify Eask and .el versions agree
+        run: just check-version
+
+      - name: Verify tag matches package version
+        run: just check-tag-version "${GITHUB_REF#refs/tags/}"

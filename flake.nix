@@ -32,6 +32,13 @@
             entry = "just test";
             pass_filenames = false;
           };
+          version-check = {
+            enable = true;
+            name = "version-check";
+            entry = "just check-version";
+            pass_filenames = false;
+            files = "^(Eask|orgzly-formatter\\.el)$";
+          };
         };
 
         devShells.default = pkgs.mkShell {
