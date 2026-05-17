@@ -9,8 +9,11 @@ compile:
     eask recompile
 
 # ERT tests.  Clean first so a stale .elc from a previous `just compile'
-# can't shadow uncommitted edits to the .el source.
+# can't shadow uncommitted edits to the .el source.  install-deps pulls
+# pinned org from GNU ELPA so older Emacs (29.x ships org 9.6.x) gets a
+# satisfying version per the Eask `(depends-on "org" "9.7")' clause.
 test: clean
+    eask install-deps
     eask run script test
 
 # package-lint

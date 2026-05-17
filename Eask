@@ -1,7 +1,7 @@
 ;; -*- mode: eask; lexical-binding: t -*-
 
 (package "orgzly-formatter"
-         "0.3.0"
+         "0.3.1"
          "Orgzly-compatible blank-line formatter for org-mode")
 
 (website-url "https://github.com/stfl/orgzly-formatter")
@@ -9,8 +9,10 @@
 
 (package-file "orgzly-formatter.el")
 
+(source "gnu")
 (source "melpa")
 
 (depends-on "emacs" "27.1")
+(depends-on "org" "9.7")
 
 (script "test" "eask test ert orgzly-formatter-test.el")

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2026 Stefan Lendl
 
 ;; Author: Stefan Lendl <git@stfl.dev>
-;; Version: 0.3.0
-;; Package-Requires: ((emacs "27.1"))
+;; Version: 0.3.1
+;; Package-Requires: ((emacs "27.1") (org "9.7"))
 ;; Keywords: outlines, convenience, files
 ;; Homepage: https://github.com/stfl/orgzly-formatter
 ;; SPDX-License-Identifier: GPL-3.0-or-later
