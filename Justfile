@@ -9,11 +9,17 @@ compile:
     eask recompile
 
 # ERT tests.  Clean first so a stale .elc from a previous `just compile'
-# can't shadow uncommitted edits to the .el source.  install-deps pulls
-# pinned org from GNU ELPA so older Emacs (29.x ships org 9.6.x) gets a
-# satisfying version per the Eask `(depends-on "org" "9.7")' clause.
+# can't shadow uncommitted edits to the .el source.
+#
+# `eask install-deps' skips org on Emacs < 30 because the built-in org
+# (9.6.x on Emacs 29.x) makes `package-installed-p' return t regardless
+# of version, so the declared `(depends-on "org" "9.7")' never triggers
+# a download.  `eask install --force org' bypasses that built-in shadow
+# check and pulls a current org from GNU ELPA into `.eask/.../elpa/',
+# which then wins the load-path race ahead of the built-in.
 test: clean
     eask install-deps
+    eask install --force org
     eask run script test
 
 # package-lint
