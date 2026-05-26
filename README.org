@@ -36,9 +36,14 @@ preferred format.  Orgzly then has nothing to change.
 | Rule | Description                                                                                                                                         |
 |------+-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | *R1*   | Exactly one blank line before each heading (except at buffer start). A heading immediately preceded by another empty heading gets no blank line.    |
+| *R2*   | One blank line between a drawer =:END:= and the body text that follows it. A drawer that ends a section (no body follows) is left unchanged.        |
 | *R3*   | Exactly one blank line at the end of every entry that has content (planning, drawer, or body). Heading-only entries get no trailing blank.          |
+| *R4*   | Planning keywords (=CLOSED= / =DEADLINE= / =SCHEDULED=) on the line after a heading are rewritten in Orgzly's canonical order — =CLOSED DEADLINE SCHEDULED=, single-space separated. Existing indentation is preserved. |
 | *WS*   | Trailing whitespace stripped from every line. Exception: =* NEXT = (keyword-only heading with a single trailing space) is preserved — org needs it. |
 | *EOF*  | Buffer ends with exactly one blank line.                                                                                                            |
+
+The formatter is idempotent: running it on an already-correct buffer produces no
+changes.
 
 Formatting in Orgzly can be changed via Settings -> Sync -> Org file format.
 This package considers the default settings of:
@@ -49,7 +54,7 @@ This package considers the default settings of:
 * Requirements
 
 - Emacs 27.1+
-- Org 9.0+
+- Org 9.7+
 
 * Installation
 ** straight.el + use-package

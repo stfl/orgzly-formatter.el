@@ -1,7 +1,7 @@
 ;; -*- mode: eask; lexical-binding: t -*-
 
 (package "orgzly-formatter"
-         "0.3.1"
+         "0.3.2"
          "Orgzly-compatible blank-line formatter for org-mode")
 
 (website-url "https://github.com/stfl/orgzly-formatter")

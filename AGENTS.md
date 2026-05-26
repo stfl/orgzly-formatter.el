@@ -37,18 +37,48 @@ nix develop --command just clean
 nix develop --command git commit
 ```
 
+## Releasing / version bumps
+
+A version bump must change the version in **three** places, and they must all agree:
+
+1. The git tag — `vX.Y.Z` (the `v` prefix is required; the bare semver is not).
+2. `Eask` — the version string in the `(package …)` form.
+3. `orgzly-formatter.el` — the `;; Version: X.Y.Z` header line.
+
+The release workflow (`.github/workflows/release.yml`, triggered on `v*` tag
+pushes) enforces this:
+
+- `just check-version` fails if the `Eask` version and the `.el` `;; Version:`
+  header disagree.
+- `just check-tag-version "$TAG"` fails if the pushed tag is not `vX.Y.Z`
+  matching the `.el` version.
+
+So to cut a release: bump `Eask` and `orgzly-formatter.el` to the same `X.Y.Z`,
+commit, then push tag `vX.Y.Z`. A mismatch in any of the three fails CI.
+
 ## Architecture
 
 This is a single-file Emacs Lisp package (`orgzly-formatter.el`) with a companion test file (`orgzly-formatter-test.el`).
 
 ### Formatting rules enforced
 
-- **R1** — Exactly one blank line before each heading (except buffer start). Adjacent empty headings get zero blank lines.
-- **R2** — One blank line between a drawer `:END:` and following body text.
-- **R3** — Exactly one blank line at the end of every entry that has content (planning/drawer/body). Heading-only entries get none.
-- **R4** — Planning keywords (`CLOSED` / `DEADLINE` / `SCHEDULED`) on the line right after a heading are rewritten in Orgzly's canonical order — `CLOSED DEADLINE SCHEDULED`, single-space separated. Indentation of the existing planning line is preserved. Detection uses `org-planning-line-re`; parsing uses `org-element-at-point` on the heading and each timestamp's `:raw-value` (locale-safe). Multi-line planning info is not merged because org-mode's grammar permits only a single planning line.
-- **WS** — Trailing whitespace stripped from all lines. Exception: keyword-only headings like `* NEXT ` keep their single trailing space (org-mode requires it to distinguish a keyword-only heading from a title starting with the keyword).
-- **EOF** — Buffer ends with exactly one blank line.
+The authoritative description of the formatting rules (**R1**, **R2**, **R3**,
+**R4**, **WS**, **EOF**) lives in the *Rules* section of [README.org](README.org).
+Read it there rather than maintaining a second copy here.
+
+**Keep [README.org](README.org) up-to-date.** Whenever you add, remove, or change
+a formatting rule — or any user-facing behavior — update README.org in the same
+change so it always reflects the current rule set.
+
+Implementation notes that belong with the code rather than the user docs:
+
+- **R4** detection uses `org-planning-line-re`; parsing uses `org-element-at-point`
+  on the heading and each timestamp's `:raw-value` (locale-safe). Multi-line
+  planning info is not merged because org-mode's grammar permits only a single
+  planning line.
+- **WS** preserves the single trailing space on keyword-only headings like
+  `* NEXT ` because org-mode requires it to distinguish a keyword-only heading
+  from a title starting with the keyword.
 
 ### Execution order in `orgzly-formatter-buffer`
 
