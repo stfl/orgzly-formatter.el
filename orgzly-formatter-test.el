@@ -18,26 +18,27 @@
 
 ;;;; ── Test helper ─────────────────────────────────────────────────────────────
 
+(defun ozfmt--format (input)
+  "Return INPUT as `orgzly-formatter-buffer' formats it.
+Runs in a fresh org-mode buffer.  TODO/NEXT/DONE keywords are always
+configured so state-only heading tests work regardless of the caller's
+`org-todo-keywords'."
+  (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
+    (with-temp-buffer
+      ;; delay-mode-hooks prevents our own save-hook from firing
+      ;; inside the test and interfering with assertions.
+      (delay-mode-hooks (org-mode))
+      (insert input)
+      (orgzly-formatter-buffer)
+      (buffer-string))))
+
 (defmacro ozfmt-deftest (name doc input expected)
   "Define an ERT test NAME (doc-string DOC) that runs the full formatter.
-Inserts INPUT into a fresh org-mode buffer, calls `orgzly-formatter-buffer',
-and asserts the result equals EXPECTED.
-
-TODO/NEXT/DONE keywords are always configured so state-only heading tests
-work regardless of the caller's `org-todo-keywords'."
+Formats INPUT with `ozfmt--format' and asserts the result equals EXPECTED."
   (declare (indent 3) (doc-string 2))
   `(ert-deftest ,name ()
      ,doc
-     (let ((result
-            (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
-              (with-temp-buffer
-                ;; delay-mode-hooks prevents our own save-hook from firing
-                ;; inside the test and interfering with assertions.
-                (delay-mode-hooks (org-mode))
-                (insert ,input)
-                (orgzly-formatter-buffer)
-                (buffer-string)))))
-       (should (equal result ,expected)))))
+     (should (equal (ozfmt--format ,input) ,expected))))
 
 ;;;; ── WS: trailing whitespace ─────────────────────────────────────────────────
 ;; These tests use \n-escaped strings intentionally: Emacs strips trailing
@@ -846,6 +847,44 @@ only starts with it gets no blank line either."
 
 ")
 
+(ert-deftest ozfmt/r5/log-notes-left-alone ()
+  "R5: every log-note heading org-java knows stays directly under the head.
+org-java's ORG_LOG_NOTE_HEADINGS lists these prefixes after \"- \"; the
+State one has its own test above."
+  (dolist (note '("- CLOSING NOTE [2026-10-01 Thu 10:00] \\\\"
+                  "- Note taken on [2026-10-01 Thu 10:00] \\\\"
+                  "- Rescheduled from \"[2026-10-01 Thu]\" on [2026-10-02 Fri 09:00]"
+                  "- Not scheduled, was \"[2026-10-01 Thu]\" on [2026-10-02 Fri 09:00]"
+                  "- New deadline from \"[2026-10-01 Thu]\" on [2026-10-02 Fri 09:00]"
+                  "- Removed deadline, was \"[2026-10-01 Thu]\" on [2026-10-02 Fri 09:00]"
+                  "- Refiled on [2026-10-01 Thu 10:00]"))
+    (should (equal (ozfmt--format (concat "* H\n" note "\n"))
+                   (concat "* H\n" note "\n\n")))))
+
+(ozfmt-deftest ozfmt/r5/state-prefix-in-text-left-alone
+               "R5: org-java matches a log note by prefix, so a list item that only
+starts like one (\"- State of the art\") stays under the head too."
+               "* H
+- State of the art
+"
+               "* H
+- State of the art
+
+")
+
+(ozfmt-deftest ozfmt/r5/indented-planning-then-text
+               "R5: an indented planning line is still the head's planning line."
+               "* H
+  SCHEDULED: <2026-05-08 Fr>
+body
+"
+               "* H
+  SCHEDULED: <2026-05-08 Fr>
+
+body
+
+")
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A
@@ -861,15 +900,7 @@ SCHEDULED: <2026-10-01 Thu>
 :END:
 body C
 ")
-         (format-once
-          (lambda (text)
-            (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
-              (with-temp-buffer
-                (delay-mode-hooks (org-mode))
-                (insert text)
-                (orgzly-formatter-buffer)
-                (buffer-string)))))
-         (first-pass (funcall format-once input)))
+         (first-pass (ozfmt--format input)))
     (should (equal first-pass "* A
 
 body A
@@ -887,7 +918,7 @@ SCHEDULED: <2026-10-01 Thu>
 body C
 
 "))
-    (should (equal (funcall format-once first-pass) first-pass))))
+    (should (equal (ozfmt--format first-pass) first-pass))))
 
 ;;;; ── Idempotency ─────────────────────────────────────────────────────────────
 
@@ -905,14 +936,7 @@ SCHEDULED: <2026-03-16 Mo>
 body text
 
 "))
-    (let ((result
-           (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
-             (with-temp-buffer
-               (delay-mode-hooks (org-mode))
-               (insert input)
-               (orgzly-formatter-buffer)
-               (buffer-string)))))
-      (should (equal result input)))))
+    (should (equal (ozfmt--format input) input))))
 
 (ert-deftest ozfmt/idempotent/two-runs-produce-same-output ()
   "Two successive formatter runs yield identical output."
@@ -927,21 +951,8 @@ body C
 
 
 "))
-    (let* ((first-pass
-            (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
-              (with-temp-buffer
-                (delay-mode-hooks (org-mode))
-                (insert input)
-                (orgzly-formatter-buffer)
-                (buffer-string))))
-           (second-pass
-            (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
-              (with-temp-buffer
-                (delay-mode-hooks (org-mode))
-                (insert first-pass)
-                (orgzly-formatter-buffer)
-                (buffer-string)))))
-      (should (equal second-pass first-pass)))))
+    (let ((first-pass (ozfmt--format input)))
+      (should (equal (ozfmt--format first-pass) first-pass)))))
 
 ;;;; ── Regression: exact diffs from the bug report ────────────────────────────
 
