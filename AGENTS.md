@@ -77,7 +77,9 @@ Implementation notes that belong with the code rather than the user docs:
   planning info is not merged because org-mode's grammar permits only a single
   planning line.
 - **R5** mirrors org-java's `OrgParserWriter.whiteSpacedHead` (Orgzly Revived
-  uses the `orgzly-revived/org-java` fork). Orgzly's parser trims a note's
+  uses the `orgzly-revived/org-java` fork). The head R5 measures from is what
+  `OrgSaxyParser.parse` binds to the heading: the planning line and the
+  `:PROPERTIES:` drawer. Orgzly's parser trims a note's
   leading blank lines and the writer puts one back, unless the content starts
   with a drawer (a trimmed line that starts and ends with `:`), `:LOGBOOK:`,
   `CLOCK: ` or a log-note heading. `orgzly-formatter--no-separator-re` holds

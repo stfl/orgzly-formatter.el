@@ -957,6 +957,44 @@ go."
                    . "* H\nSCHEDULED: <2026-10-01 Thu>\n:LOGBOOK:\n- Note\n:END:\n\n")))
     (should (equal (ozfmt--format (car case)) (cdr case)))))
 
+(ert-deftest ozfmt/r5/property-drawer-is-part-of-the-head ()
+  "R5: Orgzly reads a :PROPERTIES: drawer under the heading or planning line
+as part of the head (org-java `OrgSaxyParser.parse'), so the gap after its
+:END: follows R5: one blank line before body text, none before a line
+Orgzly writes directly under the head (e.g. :LOGBOOK:, as in commit
+f4345942 of the org repository)."
+  (dolist (case '(("* H\n:PROPERTIES:\n:ID: x\n:END:\n\n\nbody\n"
+                   . "* H\n:PROPERTIES:\n:ID: x\n:END:\n\nbody\n\n")
+                  ("* H\nSCHEDULED: <2026-10-01 Thu>\n:PROPERTIES:\n:ID: x\n:END:\n\n\n\nbody\n"
+                   . "* H\nSCHEDULED: <2026-10-01 Thu>\n:PROPERTIES:\n:ID: x\n:END:\n\nbody\n\n")
+                  ("* H\n:PROPERTIES:\n:ID: x\n:END:\n\n:LOGBOOK:\n- Note\n:END:\n"
+                   . "* H\n:PROPERTIES:\n:ID: x\n:END:\n:LOGBOOK:\n- Note\n:END:\n\n")
+                  ("* DONE H\n:PROPERTIES:\n:ID: x\n:END:\n- State \"DONE\"       from \"NEXT\"       [2026-10-01 Thu 10:00]\n"
+                   . "* DONE H\n:PROPERTIES:\n:ID: x\n:END:\n- State \"DONE\"       from \"NEXT\"       [2026-10-01 Thu 10:00]\n\n")))
+    (should (equal (ozfmt--format (car case)) (cdr case)))))
+
+(ozfmt-deftest ozfmt/r5/property-drawer-after-blank-joins-the-head
+               "R5: Orgzly writes a drawer directly under the head, and on its next
+read a :PROPERTIES: drawer there belongs to the head; the result is
+Orgzly's fixed point."
+               "* H
+
+:PROPERTIES:
+:ID: x
+:END:
+
+
+body
+"
+               "* H
+:PROPERTIES:
+:ID: x
+:END:
+
+body
+
+")
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A

@@ -25,6 +25,9 @@
 ;;        When an :END: line is immediately followed by non-blank body text
 ;;        (not a heading, not another drawer), one blank line is inserted.
 ;;        A drawer that ends a section (no body follows) is left unchanged.
+;;        After the :PROPERTIES: drawer of an entry's head, R5 then sets
+;;        the gap: exactly one blank line, or none before a line Orgzly
+;;        writes directly under the head.
 ;;
 ;;   R3.  Exactly one blank line at the END of every entry that has content.
 ;;        "Content" = any non-blank line that follows the heading: planning
@@ -42,23 +45,25 @@
 ;;        planning line is preserved.
 ;;
 ;;   R5.  Exactly one blank line between an entry's head and its body text.
-;;        The head is the heading line plus the planning line directly
-;;        under it, if any; a planning line needs a timestamp after its
-;;        keyword, as Orgzly reads it.  When body text follows the head,
-;;        the blank lines in between become exactly one: Orgzly's parser
+;;        The head is the heading line, the planning line directly under
+;;        it and a :PROPERTIES: drawer directly under those, each if
+;;        present; a planning line needs a timestamp after its keyword,
+;;        as Orgzly reads it.  When body text follows the head, the
+;;        blank lines in between become exactly one: Orgzly's parser
 ;;        drops them and its writer puts one back under the "Separate
 ;;        header and content" setting.  Not body text, and so left
 ;;        alone: a heading and a second planning line directly under the
-;;        head.  Not body text either: a drawer (R2 covers its :END:), a
-;;        CLOCK line and a log note such as "- State ...".  Orgzly
-;;        writes those directly under the head, so the blank lines
-;;        before one are removed.  A planning line after a blank line is
-;;        body text.
-;;        Case matters, as in org-java: "Deadline:" and "- state" are
-;;        body text.
+;;        head.  Not body text either: a drawer, a CLOCK line and a log
+;;        note such as "- State ...".  Orgzly writes those directly under
+;;        the head, so the blank lines before one are removed; a
+;;        :PROPERTIES: drawer that ends up there joins the head.  A
+;;        planning line after a blank line is body text.  Case matters,
+;;        as in org-java: "Deadline:" and "- state" are body text.
 ;;        Source, in github.com/orgzly-revived/org-java at e15645ee
 ;;        (the fork Orgzly Revived builds on), under
 ;;        src/main/java/com/orgzly/org/:
+;;          - parser/OrgSaxyParser.java, `parse': binds planning lines
+;;            and the :PROPERTIES: drawer under a heading to the head;
 ;;          - parser/OrgSaxyParser.java, `trimContent' (through
 ;;            OrgStringUtils.java, `trimLines'): drops the content's
 ;;            leading blank lines;
@@ -312,18 +317,58 @@ code block is not mistaken for a drawer terminator."
           (insert "\n")))
       (set-marker m nil))))
 
+(defun orgzly-formatter--skip-property-drawer ()
+  "Move past a property drawer that starts on the line at point.
+Return non-nil when there is one.  As in org-java, the drawer is a
+\":PROPERTIES:\" line through the next \":END:\" line, matched exactly;
+one with no :END: before the next heading is not a drawer here."
+  (when (looking-at-p "[ \t]*:PROPERTIES:[ \t]*$")
+    (let ((start (point)))
+      (forward-line 1)
+      (while (not (or (eobp)
+                      (org-at-heading-p)
+                      (looking-at-p "[ \t]*:END:[ \t]*$")))
+        (forward-line 1))
+      (if (looking-at-p "[ \t]*:END:[ \t]*$")
+          (progn (forward-line 1) t)
+        (goto-char start)
+        nil))))
+
+(defun orgzly-formatter--separate-head-from-body ()
+  "Set the blank lines after the head that ends at point (R5).
+Point is at the start of the line after the head."
+  (let ((head-end (point)))
+    (while (and (not (eobp)) (looking-at-p "[ \t\r]*$"))
+      (forward-line 1))
+    (cond
+     ((or (eobp)
+          (org-at-heading-p)
+          (and (= (point) head-end)
+               (looking-at-p orgzly-formatter--planning-re))))
+     ((looking-at-p orgzly-formatter--no-separator-re)
+      (delete-region head-end (point))
+      ;; A property drawer now directly under the head is part of it on
+      ;; Orgzly's next read, so the gap after its :END: follows R5 too.
+      (when (orgzly-formatter--skip-property-drawer)
+        (orgzly-formatter--separate-head-from-body)))
+     ((/= (- (point) head-end) 1)
+      (delete-region head-end (point))
+      (insert "\n")))))
+
 (defun orgzly-formatter--fix-head-separation ()
   "Apply R5: exactly one blank line between an entry's head and its body.
-The head is the heading line plus the planning line directly under it,
-if any; `orgzly-formatter--planning-re' says what counts as one.
-Orgzly's parser trims the blank lines in front of an entry's content
-and its writer puts one back (org-java's `OrgParserWriter.whiteSpacedHead',
+The head is the heading line, the planning line directly under it, if
+any (`orgzly-formatter--planning-re' says what counts as one), and a
+property drawer directly under those, if any.  That is the part of an
+entry org-java's `OrgSaxyParser.parse' binds to the heading.  Orgzly's
+parser trims the blank lines in front of the rest, the content, and its
+writer puts one back (org-java's `OrgParserWriter.whiteSpacedHead',
 under the \"Separate header and content\" setting), so:
 
 - body text after the head gets exactly one blank line before it;
 - a line `orgzly-formatter--no-separator-re' matches (a drawer, a CLOCK
   line, a log note) gets none, as Orgzly writes it directly under the
-  head; R2 handles the line after a drawer's :END:;
+  head;
 - a heading (R1), a second planning line directly under the head and
   the end of the buffer are left alone.
 
@@ -337,19 +382,8 @@ Matching is case-sensitive, as org-java's is: \"Deadline:\" or
         (forward-line 1)
         (when (looking-at-p orgzly-formatter--planning-re)
           (forward-line 1))
-        (let ((head-end (point)))
-          (while (and (not (eobp)) (looking-at-p "[ \t\r]*$"))
-            (forward-line 1))
-          (cond
-           ((or (eobp)
-                (org-at-heading-p)
-                (and (= (point) head-end)
-                     (looking-at-p orgzly-formatter--planning-re))))
-           ((looking-at-p orgzly-formatter--no-separator-re)
-            (delete-region head-end (point)))
-           ((/= (- (point) head-end) 1)
-            (delete-region head-end (point))
-            (insert "\n"))))))))
+        (orgzly-formatter--skip-property-drawer)
+        (orgzly-formatter--separate-head-from-body)))))
 
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."
