@@ -96,9 +96,11 @@
 (defconst orgzly-formatter--no-separator-re
   (concat "[ \t]*"
           "\\(?:"
-          ;; Orgzly's drawer test: the trimmed line starts and ends with
-          ;; a colon.
+          ;; `lineStartswithDrawer': the trimmed line starts and ends
+          ;; with a colon.
           ":\\(?:.*:\\)?[ \t]*$"
+          ;; Prefix tests on the trimmed content.
+          "\\|:LOGBOOK:"
           "\\|CLOCK: "
           ;; org-java's ORG_LOG_NOTE_HEADINGS: the English prefixes of
           ;; the default `org-log-note-headings'.  Orgzly never reads

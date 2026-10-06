@@ -79,9 +79,10 @@ Implementation notes that belong with the code rather than the user docs:
 - **R5** mirrors org-java's `OrgParserWriter.whiteSpacedHead` (Orgzly Revived
   uses the `orgzly-revived/org-java` fork). Orgzly's parser trims a note's
   leading blank lines and the writer puts one back, unless the content starts
-  with a drawer (a trimmed line that starts and ends with `:`), `CLOCK: ` or a
-  log-note heading. `orgzly-formatter--no-separator-re` holds those exceptions;
-  keep it in step with the writer.
+  with a drawer (a trimmed line that starts and ends with `:`), `:LOGBOOK:`,
+  `CLOCK: ` or a log-note heading. `orgzly-formatter--no-separator-re` holds
+  those exceptions; keep it in step with the writer. The Rules comment in
+  `orgzly-formatter.el` names the org-java files, functions and commit.
 - **WS** preserves the single trailing space on keyword-only headings like
   `* NEXT ` because org-mode requires it to distinguish a keyword-only heading
   from a title starting with the keyword.

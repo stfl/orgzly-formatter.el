@@ -835,6 +835,17 @@ CLOCK: [2026-10-01 Thu 09:00]--[2026-10-01 Thu 10:00] =>  1:00
 
 ")
 
+(ozfmt-deftest ozfmt/r5/logbook-prefix-left-alone
+               "R5: org-java tests the content for a :LOGBOOK: prefix, so a line that
+only starts with it gets no blank line either."
+               "* H
+:LOGBOOK: stray text
+"
+               "* H
+:LOGBOOK: stray text
+
+")
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A
