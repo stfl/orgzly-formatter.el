@@ -42,7 +42,7 @@ preferred format.  Orgzly then has nothing to change.
 | *R3*   | Exactly one blank line at the end of every entry that has content (planning, drawer, or body). Heading-only entries get no trailing blank.          |
 | *R4*   | Planning keywords (=CLOSED= / =DEADLINE= / =SCHEDULED=) on the line after a heading are rewritten in Orgzly's canonical order — =CLOSED DEADLINE SCHEDULED=, single-space separated. Existing indentation is preserved. |
 | *R5*   | Exactly one blank line between an entry's head (its heading line and any planning line under it, which needs a timestamp) and the body text that follows; surplus blank lines are removed. Orgzly writes a drawer, a =CLOCK:= line or a log note (=- State …=, =- Note taken on …=) directly under the head, so the blank lines before one are removed. Matching is case-sensitive, as in Orgzly. |
-| *WS*   | Trailing whitespace stripped from every line. Exception: =* NEXT = (keyword-only heading with a single trailing space) is preserved — org needs it. |
+| *WS*   | Trailing whitespace stripped from every line, including a carriage return before the newline. Exception: =* NEXT = (keyword-only heading with a single trailing space) is preserved — org needs it. |
 | *EOF*  | Buffer ends with exactly one blank line.                                                                                                            |
 
 The formatter is idempotent: running it on an already-correct buffer produces no

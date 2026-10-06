@@ -67,7 +67,9 @@
 ;;            ":LOGBOOK:" or "CLOCK: ", `isLogNoteHeading' matches it, or
 ;;            `lineStartswithDrawer' matches its first line.
 ;;
-;;   WS.  Trailing whitespace removed from every line.
+;;   WS.  Trailing whitespace removed from every line, a carriage return
+;;        before the newline included: Orgzly reads lines with Java's
+;;        readLine, so mixed line endings come back from it as \n only.
 ;;        Exception: a heading whose only payload is a TODO keyword plus a
 ;;        single trailing space ("* NEXT ") keeps that space — org-mode needs
 ;;        it to distinguish a keyword-only heading from one whose title begins
@@ -151,7 +153,7 @@ drawers (:PROPERTIES: … :END:), and any body text."
     (let ((end (org-entry-end-position)))
       (forward-line 1)
       ;; Skip leading blank lines — they don't constitute content.
-      (while (and (< (point) end) (looking-at-p "^[ \t]*$"))
+      (while (and (< (point) end) (looking-at-p "^[ \t\r]*$"))
         (forward-line 1))
       ;; Still inside the entry? Then there is real content.
       (< (point) end))))
@@ -173,11 +175,16 @@ detection follows org-mode's own grammar instead of an ad-hoc regex."
 
 (defun orgzly-formatter--strip-trailing-whitespace ()
   "Remove trailing whitespace from every line in the current buffer.
+A carriage return before the newline goes first: Orgzly reads lines with
+Java's `BufferedReader.readLine', which ends a line at \\r\\n too, so a
+file with mixed line endings comes back from Orgzly with \\n only.
 Exception: lines matching `orgzly-formatter--state-only-heading-p' keep
 their single trailing space (see that function's docstring)."
   (save-excursion
     (goto-char (point-min))
     (while (not (eobp))
+      (end-of-line)
+      (delete-region (point) (progn (skip-chars-backward "\r") (point)))
       (unless (orgzly-formatter--state-only-heading-p)
         (end-of-line)
         (delete-horizontal-space))
@@ -331,7 +338,7 @@ Matching is case-sensitive, as org-java's is: \"Deadline:\" or
         (when (looking-at-p orgzly-formatter--planning-re)
           (forward-line 1))
         (let ((head-end (point)))
-          (while (and (not (eobp)) (looking-at-p "[ \t]*$"))
+          (while (and (not (eobp)) (looking-at-p "[ \t\r]*$"))
             (forward-line 1))
           (cond
            ((or (eobp)
@@ -340,7 +347,7 @@ Matching is case-sensitive, as org-java's is: \"Deadline:\" or
                      (looking-at-p orgzly-formatter--planning-re))))
            ((looking-at-p orgzly-formatter--no-separator-re)
             (delete-region head-end (point)))
-           ((/= (count-lines head-end (point)) 1)
+           ((/= (- (point) head-end) 1)
             (delete-region head-end (point))
             (insert "\n"))))))))
 

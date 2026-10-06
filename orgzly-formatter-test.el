@@ -74,6 +74,22 @@ Formats INPUT with `ozfmt--format' and asserts the result equals EXPECTED."
                "* NEXT   \n"
                "* NEXT\n")
 
+(ozfmt-deftest ozfmt/ws/strips-line-final-carriage-return
+               "A CR before the newline goes: Orgzly reads lines with Java's
+readLine, which ends a line at \\r\\n, so mixed line endings come back as \\n."
+               "* H\r\nbody  \r\nmore\n"
+               "* H\n\nbody\nmore\n\n")
+
+(ozfmt-deftest ozfmt/ws/carriage-return-only-line-is-blank
+               "A line holding only a CR is a blank line to R5 and to R1."
+               "* A\n\r\nbody\n\r\n\r\n* B\n\r\n* C\n"
+               "* A\n\nbody\n\n* B\n* C\n")
+
+(ozfmt-deftest ozfmt/ws/preserves-state-only-space-before-carriage-return
+               "* NEXT  followed by CRLF keeps its single trailing space."
+               "* NEXT \r\n"
+               "* NEXT \n")
+
 ;;;; ── Empty entries (heading only, no content) ───────────────────────────────
 
 (ozfmt-deftest ozfmt/empty/single-heading
