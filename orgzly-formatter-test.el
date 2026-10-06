@@ -928,6 +928,19 @@ keyword (PLANNING_TIMES_P); without one the line is body text."
     (should (equal (ozfmt--format (concat "* H\n" line "\n"))
                    (concat "* H\n\n" line "\n\n")))))
 
+(ert-deftest ozfmt/r5/blanks-before-exception-removed ()
+  "R5: Orgzly drops the blank lines in front of the content (org-java
+`OrgSaxyParser.trimContent') and puts none back before a drawer, a CLOCK
+line or a log note, so the blank lines between the head and such a line
+go."
+  (dolist (case '(("* H\n\n- State \"DONE\"       from \"NEXT\"       [2026-10-01 Thu 10:00]\n"
+                   . "* H\n- State \"DONE\"       from \"NEXT\"       [2026-10-01 Thu 10:00]\n\n")
+                  ("* H\n\n\nCLOCK: [2026-10-01 Thu 09:00]--[2026-10-01 Thu 10:00] =>  1:00\n"
+                   . "* H\nCLOCK: [2026-10-01 Thu 09:00]--[2026-10-01 Thu 10:00] =>  1:00\n\n")
+                  ("* H\nSCHEDULED: <2026-10-01 Thu>\n\n:LOGBOOK:\n- Note\n:END:\n"
+                   . "* H\nSCHEDULED: <2026-10-01 Thu>\n:LOGBOOK:\n- Note\n:END:\n\n")))
+    (should (equal (ozfmt--format (car case)) (cdr case)))))
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A

@@ -48,10 +48,12 @@
 ;;        the blank lines in between become exactly one: Orgzly's parser
 ;;        drops them and its writer puts one back under the "Separate
 ;;        header and content" setting.  Not body text, and so left
-;;        alone: a heading, a second planning line directly under the
-;;        head, a drawer (R2 covers its :END:), a CLOCK line and a log
-;;        note such as "- State ...", which Orgzly writes directly under
-;;        the head.  A planning line after a blank line is body text.
+;;        alone: a heading and a second planning line directly under the
+;;        head.  Not body text either: a drawer (R2 covers its :END:), a
+;;        CLOCK line and a log note such as "- State ...".  Orgzly
+;;        writes those directly under the head, so the blank lines
+;;        before one are removed.  A planning line after a blank line is
+;;        body text.
 ;;        Case matters, as in org-java: "Deadline:" and "- state" are
 ;;        body text.
 ;;        Source, in github.com/orgzly-revived/org-java at e15645ee
@@ -118,7 +120,7 @@
   "Matches a first body line that Orgzly writes directly under the head.
 org-java's `OrgParserWriter.whiteSpacedHead' leaves out the blank line
 between head and content when the content starts with a drawer, a
-CLOCK line or a log note.  R5 leaves such a line where it is.")
+CLOCK line or a log note.  R5 removes the blank lines before one.")
 
 (defconst orgzly-formatter--planning-re
   (concat "[ \t]*\\(?:CLOSED\\|DEADLINE\\|SCHEDULED\\): *"
@@ -306,19 +308,19 @@ code block is not mistaken for a drawer terminator."
 (defun orgzly-formatter--fix-head-separation ()
   "Apply R5: exactly one blank line between an entry's head and its body.
 The head is the heading line plus the planning line directly under it,
-if any; `orgzly-formatter--planning-re' says what counts as one.  When
-the first non-blank line after the head is body text, the
-blank lines between them become exactly one.  Orgzly's parser trims
-the content's leading blank lines and its writer separates head and
-content with one (org-java's `OrgParserWriter.whiteSpacedHead', under
-the \"Separate header and content\" setting).
+if any; `orgzly-formatter--planning-re' says what counts as one.
+Orgzly's parser trims the blank lines in front of an entry's content
+and its writer puts one back (org-java's `OrgParserWriter.whiteSpacedHead',
+under the \"Separate header and content\" setting), so:
 
-Not body text, and so left alone: a heading (R1), a second planning
-line directly under the head, the end of the buffer, and the lines
-`orgzly-formatter--no-separator-re' matches, drawers among them (R2
-handles the line after :END:).  A planning line after a blank line is
-body text, to Org and to Orgzly.
+- body text after the head gets exactly one blank line before it;
+- a line `orgzly-formatter--no-separator-re' matches (a drawer, a CLOCK
+  line, a log note) gets none, as Orgzly writes it directly under the
+  head; R2 handles the line after a drawer's :END:;
+- a heading (R1), a second planning line directly under the head and
+  the end of the buffer are left alone.
 
+A planning line after a blank line is body text, to Org and to Orgzly.
 Matching is case-sensitive, as org-java's is: \"Deadline:\" or
 \"- state\" is body text."
   (save-excursion
@@ -331,14 +333,16 @@ Matching is case-sensitive, as org-java's is: \"Deadline:\" or
         (let ((head-end (point)))
           (while (and (not (eobp)) (looking-at-p "[ \t]*$"))
             (forward-line 1))
-          (unless (or (eobp)
-                      (org-at-heading-p)
-                      (and (= (point) head-end)
-                           (looking-at-p orgzly-formatter--planning-re))
-                      (looking-at-p orgzly-formatter--no-separator-re)
-                      (= (count-lines head-end (point)) 1))
+          (cond
+           ((or (eobp)
+                (org-at-heading-p)
+                (and (= (point) head-end)
+                     (looking-at-p orgzly-formatter--planning-re))))
+           ((looking-at-p orgzly-formatter--no-separator-re)
+            (delete-region head-end (point)))
+           ((/= (count-lines head-end (point)) 1)
             (delete-region head-end (point))
-            (insert "\n")))))))
+            (insert "\n"))))))))
 
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."
