@@ -63,7 +63,7 @@ This is a single-file Emacs Lisp package (`orgzly-formatter.el`) with a companio
 ### Formatting rules enforced
 
 The authoritative description of the formatting rules (**R1**, **R2**, **R3**,
-**R4**, **WS**, **EOF**) lives in the *Rules* section of [README.org](README.org).
+**R4**, **R5**, **WS**, **EOF**) lives in the *Rules* section of [README.org](README.org).
 Read it there rather than maintaining a second copy here.
 
 **Keep [README.org](README.org) up-to-date.** Whenever you add, remove, or change
@@ -76,6 +76,12 @@ Implementation notes that belong with the code rather than the user docs:
   on the heading and each timestamp's `:raw-value` (locale-safe). Multi-line
   planning info is not merged because org-mode's grammar permits only a single
   planning line.
+- **R5** mirrors org-java's `OrgParserWriter.whiteSpacedHead` (Orgzly Revived
+  uses the `orgzly-revived/org-java` fork). Orgzly's parser trims a note's
+  leading blank lines and the writer puts one back, unless the content starts
+  with a drawer (a trimmed line that starts and ends with `:`), `CLOCK: ` or a
+  log-note heading. `orgzly-formatter--no-separator-re` holds those exceptions;
+  keep it in step with the writer.
 - **WS** preserves the single trailing space on keyword-only headings like
   `* NEXT ` because org-mode requires it to distinguish a keyword-only heading
   from a title starting with the keyword.
@@ -86,7 +92,8 @@ Implementation notes that belong with the code rather than the user docs:
 2. `orgzly-formatter--fix-planning-order` (R4 per heading)
 3. `orgzly-formatter--fix-blank-lines` → calls `orgzly-formatter--fix-entry` per heading via `org-map-entries` (R1 + R3)
 4. `orgzly-formatter--fix-drawer-separation` (R2 per drawer)
-5. `orgzly-formatter--fix-eof` (EOF rule)
+5. `orgzly-formatter--fix-head-separation` (R5 per heading)
+6. `orgzly-formatter--fix-eof` (EOF rule)
 
 ### Prefer org APIs over manual parsing
 

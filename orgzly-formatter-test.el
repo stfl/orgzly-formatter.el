@@ -650,6 +650,234 @@ body
 * Next
 ")
 
+;;;; ── R5: blank between head and body ────────────────────────────────────────
+
+(ozfmt-deftest ozfmt/r5/heading-then-text
+               "R5: a blank line is inserted between a bare heading and body text (Orgzly commit 243f1fff)."
+               "** NEXT The Title shall just be Honorarnote or Invoice
+With [Rechnungsnummer] below
+Don't duplicate the invoice id
+"
+               "** NEXT The Title shall just be Honorarnote or Invoice
+
+With [Rechnungsnummer] below
+Don't duplicate the invoice id
+
+")
+
+(ozfmt-deftest ozfmt/r5/heading-then-list
+               "R5: a list item counts as body text (Orgzly commit 6f97fe23)."
+               "** Notes
+- Terms:
+  - *ceremony* :: a recurring meeting about the work
+* Next
+"
+               "** Notes
+
+- Terms:
+  - *ceremony* :: a recurring meeting about the work
+
+* Next
+")
+
+(ozfmt-deftest ozfmt/r5/heading-then-table
+               "R5: a table counts as body text (Orgzly commit 6d32742c)."
+               "*** Vergleich
+| Marke   | Modell |
+"
+               "*** Vergleich
+
+| Marke   | Modell |
+
+")
+
+(ozfmt-deftest ozfmt/r5/heading-then-block
+               "R5: a block counts as body text (Orgzly commit 6d32742c)."
+               "**** Forum History:
+#+begin_quote
+quoted
+#+end_quote
+"
+               "**** Forum History:
+
+#+begin_quote
+quoted
+#+end_quote
+
+")
+
+(ozfmt-deftest ozfmt/r5/planning-then-text
+               "R5: the blank line goes after the planning line, not the heading (Orgzly commit 19def51d)."
+               "* DONE Zug raussuchen und reservieren
+CLOSED: [2024-06-01 Sat 10:32] SCHEDULED: <2024-06-01 Sat>
+8:38 westbahnhof
+"
+               "* DONE Zug raussuchen und reservieren
+CLOSED: [2024-06-01 Sat 10:32] SCHEDULED: <2024-06-01 Sat>
+
+8:38 westbahnhof
+
+")
+
+(ozfmt-deftest ozfmt/r5/planning-then-list
+               "R5: planning line followed by a list item (Orgzly commit 6d32742c)."
+               "*** DONE Mildes Massageöl
+CLOSED: [2023-05-21 Sun 00:31]
+- Mandelöl
+- Sesamöl
+"
+               "*** DONE Mildes Massageöl
+CLOSED: [2023-05-21 Sun 00:31]
+
+- Mandelöl
+- Sesamöl
+
+")
+
+(ozfmt-deftest ozfmt/r5/heading-surplus-blanks-collapsed
+               "R5: two blank lines under a bare heading collapse to one (Orgzly commit f4345942)."
+               "** PROJ Ersatzteile kaufen
+
+
+- Die Befestigung an der Unterseite ist abgebrochen
+"
+               "** PROJ Ersatzteile kaufen
+
+- Die Befestigung an der Unterseite ist abgebrochen
+
+")
+
+(ozfmt-deftest ozfmt/r5/planning-surplus-blanks-collapsed
+               "R5: three blank lines under a planning line collapse to one (Orgzly commits 5b208202, cf26cc57)."
+               "** KILL u-boot early boot
+CLOSED: [2024-07-15 Mo 09:43]
+
+
+
+board_init
+"
+               "** KILL u-boot early boot
+CLOSED: [2024-07-15 Mo 09:43]
+
+board_init
+
+")
+
+(ozfmt-deftest ozfmt/r5/heading-blank-already-present-unchanged
+               "R5: one blank line under a heading is already correct."
+               "* H
+
+body
+
+"
+               "* H
+
+body
+
+")
+
+(ozfmt-deftest ozfmt/r5/planning-blank-already-present-unchanged
+               "R5: one blank line under a planning line is already correct."
+               "* H
+SCHEDULED: <2026-10-01 Thu>
+
+Kathy fragen was sie braucht
+
+"
+               "* H
+SCHEDULED: <2026-10-01 Thu>
+
+Kathy fragen was sie braucht
+
+")
+
+(ozfmt-deftest ozfmt/r5/planning-then-logbook-no-blank
+               "R5: a drawer is not body text; Orgzly writes it directly under the
+planning line (Orgzly commit 86f51d06).  R2 still separates the body after :END:."
+               "* NEXT Meeting Matz
+SCHEDULED: <2026-07-13 Mon>
+:LOGBOOK:
+CLOCK: [2026-07-10 Fri 08:30]--[2026-07-10 Fri 12:30] =>  4:00
+:END:
+8:30 - 12:30
+"
+               "* NEXT Meeting Matz
+SCHEDULED: <2026-07-13 Mon>
+:LOGBOOK:
+CLOCK: [2026-07-10 Fri 08:30]--[2026-07-10 Fri 12:30] =>  4:00
+:END:
+
+8:30 - 12:30
+
+")
+
+(ozfmt-deftest ozfmt/r5/log-note-left-alone
+               "R5: Orgzly writes a log note directly under the head, so no blank
+line goes before it (org-java `OrgParserWriter.isLogNoteHeading')."
+               "* DONE H
+CLOSED: [2026-10-01 Thu 10:00]
+- State \"DONE\"       from \"NEXT\"       [2026-10-01 Thu 10:00]
+"
+               "* DONE H
+CLOSED: [2026-10-01 Thu 10:00]
+- State \"DONE\"       from \"NEXT\"       [2026-10-01 Thu 10:00]
+
+")
+
+(ozfmt-deftest ozfmt/r5/clock-line-left-alone
+               "R5: Orgzly writes a CLOCK line directly under the head, so no blank
+line goes before it (org-java `OrgParserWriter.whiteSpacedHead')."
+               "* H
+CLOCK: [2026-10-01 Thu 09:00]--[2026-10-01 Thu 10:00] =>  1:00
+"
+               "* H
+CLOCK: [2026-10-01 Thu 09:00]--[2026-10-01 Thu 10:00] =>  1:00
+
+")
+
+(ert-deftest ozfmt/r5/idempotent ()
+  "R5: a second run over R5's output changes nothing."
+  (let* ((input "* A
+body A
+** B
+SCHEDULED: <2026-10-01 Thu>
+
+
+- item
+*** C
+:PROPERTIES:
+:ID: c
+:END:
+body C
+")
+         (format-once
+          (lambda (text)
+            (let ((org-todo-keywords '((sequence "TODO" "NEXT" "|" "DONE"))))
+              (with-temp-buffer
+                (delay-mode-hooks (org-mode))
+                (insert text)
+                (orgzly-formatter-buffer)
+                (buffer-string)))))
+         (first-pass (funcall format-once input)))
+    (should (equal first-pass "* A
+
+body A
+
+** B
+SCHEDULED: <2026-10-01 Thu>
+
+- item
+
+*** C
+:PROPERTIES:
+:ID: c
+:END:
+
+body C
+
+"))
+    (should (equal (funcall format-once first-pass) first-pass))))
+
 ;;;; ── Idempotency ─────────────────────────────────────────────────────────────
 
 (ert-deftest ozfmt/idempotent/already-formatted-buffer ()

@@ -20,6 +20,8 @@ by Orgzly:
 
 - Adds a blank line after entries that have content
 - Adds a blank line after entries that have only a properties drawer
+- Puts exactly one blank line between an entry's heading (or its planning
+  line) and the body text under it
 - Removes extra trailing blank lines at end-of-file
 
 Each of these appears as a one-line diff in git, causing merge conflicts when
@@ -39,6 +41,7 @@ preferred format.  Orgzly then has nothing to change.
 | *R2*   | One blank line between a drawer =:END:= and the body text that follows it. A drawer that ends a section (no body follows) is left unchanged.        |
 | *R3*   | Exactly one blank line at the end of every entry that has content (planning, drawer, or body). Heading-only entries get no trailing blank.          |
 | *R4*   | Planning keywords (=CLOSED= / =DEADLINE= / =SCHEDULED=) on the line after a heading are rewritten in Orgzly's canonical order — =CLOSED DEADLINE SCHEDULED=, single-space separated. Existing indentation is preserved. |
+| *R5*   | Exactly one blank line between an entry's head (its heading line and any planning line under it) and the body text that follows; surplus blank lines are removed. Left alone, because Orgzly writes them directly under the head: a drawer, a =CLOCK:= line, a log note (=- State …=, =- Note taken on …=). |
 | *WS*   | Trailing whitespace stripped from every line. Exception: =* NEXT = (keyword-only heading with a single trailing space) is preserved — org needs it. |
 | *EOF*  | Buffer ends with exactly one blank line.                                                                                                            |
 

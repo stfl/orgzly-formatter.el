@@ -41,6 +41,17 @@
 ;;        canonical order, causing spurious diffs.  Indentation of the first
 ;;        planning line is preserved.
 ;;
+;;   R5.  Exactly one blank line between an entry's head and its body text.
+;;        The head is the heading line plus the planning line directly
+;;        under it, if any.  When body text follows the head, the blank
+;;        lines in between become exactly one: Orgzly's parser drops them
+;;        and its writer puts one back (org-java's
+;;        `OrgParserWriter.whiteSpacedHead', "Separate header and
+;;        content").  Not body text, and so left alone: a heading, a
+;;        planning line, a drawer (R2 covers its :END:), a CLOCK line and
+;;        a log note such as "- State ...", which Orgzly writes directly
+;;        under the head.
+;;
 ;;   WS.  Trailing whitespace removed from every line.
 ;;        Exception: a heading whose only payload is a TODO keyword plus a
 ;;        single trailing space ("* NEXT ") keeps that space — org-mode needs
@@ -72,6 +83,27 @@
   :prefix "orgzly-formatter-")
 
 ;;;; ── Internal helpers ────────────────────────────────────────────────────────
+
+(defconst orgzly-formatter--no-separator-re
+  (concat "[ \t]*"
+          "\\(?:"
+          ;; Orgzly's drawer test: the trimmed line starts and ends with
+          ;; a colon.
+          ":\\(?:.*:\\)?[ \t]*$"
+          "\\|CLOCK: "
+          ;; org-java's ORG_LOG_NOTE_HEADINGS: the English prefixes of
+          ;; the default `org-log-note-headings'.  Orgzly never reads
+          ;; the user's setting, so neither does this.
+          "\\|- "
+          (regexp-opt '("CLOSING NOTE " "State " "Note taken on "
+                        "Rescheduled from " "Not scheduled, was "
+                        "New deadline from " "Removed deadline, was "
+                        "Refiled on "))
+          "\\)")
+  "Matches a first body line that Orgzly writes directly under the head.
+org-java's `OrgParserWriter.whiteSpacedHead' leaves out the blank line
+between head and content when the content starts with a drawer, a
+CLOCK line or a log note.  R5 leaves such a line where it is.")
 
 (defsubst orgzly-formatter--state-only-heading-p ()
   "Non-nil when the current line is a keyword-only org heading.
@@ -247,6 +279,35 @@ code block is not mistaken for a drawer terminator."
           (insert "\n")))
       (set-marker m nil))))
 
+(defun orgzly-formatter--fix-head-separation ()
+  "Apply R5: exactly one blank line between an entry's head and its body.
+The head is the heading line plus the planning line directly under it,
+if any.  When the first non-blank line after the head is body text, the
+blank lines between them become exactly one.  Orgzly's parser trims
+the content's leading blank lines and its writer separates head and
+content with one (org-java's `OrgParserWriter.whiteSpacedHead', under
+the \"Separate header and content\" setting).
+
+Not body text, and so left alone: a heading (R1), a planning line, the
+end of the buffer, and the lines `orgzly-formatter--no-separator-re'
+matches, drawers among them (R2 handles the line after :END:)."
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward org-outline-regexp-bol nil t)
+      (forward-line 1)
+      (when (looking-at-p org-planning-line-re)
+        (forward-line 1))
+      (let ((head-end (point)))
+        (while (and (not (eobp)) (looking-at-p "[ \t]*$"))
+          (forward-line 1))
+        (unless (or (eobp)
+                    (org-at-heading-p)
+                    (looking-at-p org-planning-line-re)
+                    (looking-at-p orgzly-formatter--no-separator-re)
+                    (= (count-lines head-end (point)) 1))
+          (delete-region head-end (point))
+          (insert "\n"))))))
+
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."
   (save-excursion
@@ -277,7 +338,8 @@ Applies, in order:
   2. `orgzly-formatter--fix-planning-order'         (R4 per heading)
   3. `orgzly-formatter--fix-blank-lines'            (R1 + R3 per heading)
   4. `orgzly-formatter--fix-drawer-separation'      (R2 per drawer)
-  5. `orgzly-formatter--fix-eof'                    (EOF rule)
+  5. `orgzly-formatter--fix-head-separation'        (R5 per heading)
+  6. `orgzly-formatter--fix-eof'                    (EOF rule)
 
 The function is idempotent: running it on an already-correct buffer
 produces no changes.  Safe to call from `before-save-hook'."
@@ -286,6 +348,7 @@ produces no changes.  Safe to call from `before-save-hook'."
   (orgzly-formatter--fix-planning-order)
   (orgzly-formatter--fix-blank-lines)
   (orgzly-formatter--fix-drawer-separation)
+  (orgzly-formatter--fix-head-separation)
   (orgzly-formatter--fix-eof)
   (when (called-interactively-p 'interactive)
     (message "orgzly-formatter: buffer formatted")))
