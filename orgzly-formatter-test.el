@@ -45,8 +45,8 @@ work regardless of the caller's `org-todo-keywords'."
 
 (ozfmt-deftest ozfmt/ws/strips-body-line
                "Trailing spaces on a body line are removed."
-               "* H\nbody text   \n"
-               "* H\nbody text\n\n")
+               "* H\n\nbody text   \n"
+               "* H\n\nbody text\n\n")
 
 (ozfmt-deftest ozfmt/ws/strips-heading-trailing-spaces
                "Trailing spaces on a plain heading (no keyword) are removed."
@@ -116,11 +116,13 @@ work regardless of the caller's `org-todo-keywords'."
 (ozfmt-deftest ozfmt/empty/heading-only-last-entry-no-eof-blank
                "The last heading-only entry in the file gets no trailing blank line."
                "* First
+
 some content
 
 * Last
 "
                "* First
+
 some content
 
 * Last
@@ -131,10 +133,12 @@ some content
 (ozfmt-deftest ozfmt/content/body-gets-trailing-blank
                "An entry with plain body text gets exactly one trailing blank (diff 1 regression)."
                "* H
+
 body text
 * Next
 "
                "* H
+
 body text
 
 * Next
@@ -189,11 +193,13 @@ SCHEDULED: <2026-03-16 Mo>
 (ozfmt-deftest ozfmt/content/body-trailing-blank-already-present
                "When the trailing blank already exists the buffer is unchanged (idempotent)."
                "* H
+
 body text
 
 * Next
 "
                "* H
+
 body text
 
 * Next
@@ -202,11 +208,13 @@ body text
 (ozfmt-deftest ozfmt/content/body-ends-with-bold-text
                "When the last line of the body ends with Org markup (e.g. bold), the trailing blank is still added after it, not stripped as part of the markup."
                "* H
+
 body text
 *bold test*
 * Next
 "
                "* H
+
 body text
 *bold test*
 
@@ -216,9 +224,11 @@ body text
 (ozfmt-deftest ozfmt/content/last-entry-with-body-gets-trailing-blank
                "The last entry in the file gets a trailing blank even with no next heading."
                "* A
+
 body
 "
                "* A
+
 body
 
 ")
@@ -226,12 +236,14 @@ body
 (ozfmt-deftest ozfmt/content/multiline-body-gets-single-trailing-blank
                "Multiple body lines get exactly one trailing blank, not one per line."
                "* H
+
 line one
 line two
 line three
 * Next
 "
                "* H
+
 line one
 line two
 line three
@@ -244,9 +256,11 @@ line three
 (ozfmt-deftest ozfmt/r1/no-blank-before-first-heading
                "The very first heading must not gain a leading blank line (bobp guard)."
                "* First
+
 body
 "
                "* First
+
 body
 
 ")
@@ -254,11 +268,13 @@ body
 (ozfmt-deftest ozfmt/r1/one-blank-already-correct
                "Exactly one blank before a heading: nothing changes."
                "* A
+
 body
 
 * B
 "
                "* A
+
 body
 
 * B
@@ -267,12 +283,14 @@ body
 (ozfmt-deftest ozfmt/r1/two-blanks-trimmed-to-one
                "Two blank lines between content headings are trimmed to one."
                "* A
+
 body
 
 
 * B
 "
                "* A
+
 body
 
 * B
@@ -281,6 +299,7 @@ body
 (ozfmt-deftest ozfmt/r1/three-blanks-trimmed-to-one
                "Three blank lines between content headings are trimmed to one."
                "* A
+
 body
 
 
@@ -288,6 +307,7 @@ body
 * B
 "
                "* A
+
 body
 
 * B
@@ -297,14 +317,18 @@ body
                "When content A is followed immediately by B (no blank), R3 for A fires and
 satisfies R1 for B in the same pass."
                "* A
+
 body
 * B
+
 body
 "
                "* A
+
 body
 
 * B
+
 body
 
 ")
@@ -314,10 +338,12 @@ body
 (ozfmt-deftest ozfmt/eof/one-trailing-blank-unchanged
                "A file already ending with exactly one blank line is not modified."
                "* H
+
 body
 
 "
                "* H
+
 body
 
 ")
@@ -325,11 +351,13 @@ body
 (ozfmt-deftest ozfmt/eof/two-trailing-blanks-trimmed
                "Two trailing blank lines (diff 3 regression) are trimmed to one."
                "* H
+
 body
 
 
 "
                "* H
+
 body
 
 ")
@@ -337,12 +365,14 @@ body
 (ozfmt-deftest ozfmt/eof/three-trailing-blanks-trimmed
                "Three trailing blank lines are trimmed to one."
                "* H
+
 body
 
 
 
 "
                "* H
+
 body
 
 ")
@@ -350,11 +380,13 @@ body
 (ozfmt-deftest ozfmt/eof/empty-heading-at-eof-no-trailing-blank
                "An empty heading at EOF does not get a trailing blank."
                "* Content
+
 body
 
 * EmptyAtEnd
 "
                "* Content
+
 body
 
 * EmptyAtEnd
@@ -519,10 +551,12 @@ DEADLINE: <2026-05-15 Fr +3m> SCHEDULED: <2026-05-08 Fr +3m>
                "R4: a planning line already in canonical order is unchanged (idempotent)."
                "* H
 DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>
+
 body
 "
                "* H
 DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>
+
 body
 
 ")
@@ -531,10 +565,12 @@ body
                "R4: SCHEDULED+DEADLINE+CLOSED in arbitrary order → CLOSED DEADLINE SCHEDULED."
                "* DONE H
 SCHEDULED: <2026-02-26 Do> DEADLINE: <2026-03-01 Su> CLOSED: [2026-03-02 Mo 09:48]
+
 body
 "
                "* DONE H
 CLOSED: [2026-03-02 Mo 09:48] DEADLINE: <2026-03-01 Su> SCHEDULED: <2026-02-26 Do>
+
 body
 
 ")
@@ -590,10 +626,12 @@ DEADLINE: <2026-05-15 Fr> SCHEDULED: <2026-05-08 Fr>--<2026-05-10 Su>
                "R4: a single SCHEDULED line is left alone (already canonical)."
                "* H
 SCHEDULED: <2026-05-08 Fr +3m>
+
 body
 "
                "* H
 SCHEDULED: <2026-05-08 Fr +3m>
+
 body
 
 ")
@@ -601,10 +639,12 @@ body
 (ozfmt-deftest ozfmt/r4/no-planning-info-unchanged
                "R4: entries without planning info are not touched."
                "* H
+
 body
 * Next
 "
                "* H
+
 body
 
 * Next
@@ -622,6 +662,7 @@ SCHEDULED: <2026-03-16 Mo>
 
 * Empty
 * Last
+
 body text
 
 "))
@@ -706,6 +747,7 @@ SCHEDULED: <2026-03-16 Mo>
 (ozfmt-deftest ozfmt/regression/diff3-extra-trailing-newlines-removed
                "Diff 3 regression: Orgzly removed extra trailing newlines."
                "* Last heading
+
 Speaker 2
 body text here
 
@@ -713,6 +755,7 @@ body text here
 
 "
                "* Last heading
+
 Speaker 2
 body text here
 
