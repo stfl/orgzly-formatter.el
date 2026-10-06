@@ -43,14 +43,17 @@
 ;;
 ;;   R5.  Exactly one blank line between an entry's head and its body text.
 ;;        The head is the heading line plus the planning line directly
-;;        under it, if any.  When body text follows the head, the blank
-;;        lines in between become exactly one: Orgzly's parser drops them
-;;        and its writer puts one back under the "Separate header and
-;;        content" setting.  Not body text, and so left alone: a heading,
-;;        a planning line, a drawer (R2 covers its :END:), a CLOCK line
-;;        and a log note such as "- State ...", which Orgzly writes
-;;        directly under the head.  Case matters, as in org-java:
-;;        "Deadline:" and "- state" are body text.
+;;        under it, if any; a planning line needs a timestamp after its
+;;        keyword, as Orgzly reads it.  When body text follows the head,
+;;        the blank lines in between become exactly one: Orgzly's parser
+;;        drops them and its writer puts one back under the "Separate
+;;        header and content" setting.  Not body text, and so left
+;;        alone: a heading, a second planning line directly under the
+;;        head, a drawer (R2 covers its :END:), a CLOCK line and a log
+;;        note such as "- State ...", which Orgzly writes directly under
+;;        the head.  A planning line after a blank line is body text.
+;;        Case matters, as in org-java: "Deadline:" and "- state" are
+;;        body text.
 ;;        Source, in github.com/orgzly-revived/org-java at e15645ee
 ;;        (the fork Orgzly Revived builds on), under
 ;;        src/main/java/com/orgzly/org/:
@@ -116,6 +119,15 @@
 org-java's `OrgParserWriter.whiteSpacedHead' leaves out the blank line
 between head and content when the content starts with a drawer, a
 CLOCK line or a log note.  R5 leaves such a line where it is.")
+
+(defconst orgzly-formatter--planning-re
+  (concat "[ \t]*\\(?:CLOSED\\|DEADLINE\\|SCHEDULED\\): *"
+          ;; org-java's DT: an active or inactive timestamp.
+          "[[<][0-9]\\{4,\\}-[0-9]\\{2\\}-[0-9]\\{2\\} ?[^]\r\n>]*?[]>]")
+  "Matches a planning line as Orgzly reads one: a keyword, then a timestamp.
+org-java's PLANNING_TIMES_P needs the timestamp, so \"SCHEDULED: tbd\"
+is body text to Orgzly although Org's `org-planning-line-re' matches it.
+Unlike PLANNING_TIMES_P, the keyword must start the line, as in Org.")
 
 (defsubst orgzly-formatter--state-only-heading-p ()
   "Non-nil when the current line is a keyword-only org heading.
@@ -294,15 +306,18 @@ code block is not mistaken for a drawer terminator."
 (defun orgzly-formatter--fix-head-separation ()
   "Apply R5: exactly one blank line between an entry's head and its body.
 The head is the heading line plus the planning line directly under it,
-if any.  When the first non-blank line after the head is body text, the
+if any; `orgzly-formatter--planning-re' says what counts as one.  When
+the first non-blank line after the head is body text, the
 blank lines between them become exactly one.  Orgzly's parser trims
 the content's leading blank lines and its writer separates head and
 content with one (org-java's `OrgParserWriter.whiteSpacedHead', under
 the \"Separate header and content\" setting).
 
-Not body text, and so left alone: a heading (R1), a planning line, the
-end of the buffer, and the lines `orgzly-formatter--no-separator-re'
-matches, drawers among them (R2 handles the line after :END:).
+Not body text, and so left alone: a heading (R1), a second planning
+line directly under the head, the end of the buffer, and the lines
+`orgzly-formatter--no-separator-re' matches, drawers among them (R2
+handles the line after :END:).  A planning line after a blank line is
+body text, to Org and to Orgzly.
 
 Matching is case-sensitive, as org-java's is: \"Deadline:\" or
 \"- state\" is body text."
@@ -311,14 +326,15 @@ Matching is case-sensitive, as org-java's is: \"Deadline:\" or
     (let ((case-fold-search nil))
       (while (re-search-forward org-outline-regexp-bol nil t)
         (forward-line 1)
-        (when (looking-at-p org-planning-line-re)
+        (when (looking-at-p orgzly-formatter--planning-re)
           (forward-line 1))
         (let ((head-end (point)))
           (while (and (not (eobp)) (looking-at-p "[ \t]*$"))
             (forward-line 1))
           (unless (or (eobp)
                       (org-at-heading-p)
-                      (looking-at-p org-planning-line-re)
+                      (and (= (point) head-end)
+                           (looking-at-p orgzly-formatter--planning-re))
                       (looking-at-p orgzly-formatter--no-separator-re)
                       (= (count-lines head-end (point)) 1))
             (delete-region head-end (point))

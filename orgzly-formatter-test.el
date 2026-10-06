@@ -906,6 +906,28 @@ of a log note, a CLOCK line or :LOGBOOK: are body text."
     (should (equal (ozfmt--format (concat "* H\n" line "\n"))
                    (concat "* H\n\n" line "\n\n")))))
 
+(ozfmt-deftest ozfmt/r5/planning-after-blank-is-body
+               "R5: a planning line after a blank line is body text to Org and to
+Orgzly, so the blank lines before it become one (Orgzly keeps one there,
+e.g. commit 9dd74378)."
+               "* H
+
+
+SCHEDULED: <2026-10-01 Thu>
+"
+               "* H
+
+SCHEDULED: <2026-10-01 Thu>
+
+")
+
+(ert-deftest ozfmt/r5/planning-without-timestamp-is-body ()
+  "R5: org-java reads a planning line only with a timestamp after the
+keyword (PLANNING_TIMES_P); without one the line is body text."
+  (dolist (line '("SCHEDULED: tbd" "DEADLINE: <2026-10-01 Thu"))
+    (should (equal (ozfmt--format (concat "* H\n" line "\n"))
+                   (concat "* H\n\n" line "\n\n")))))
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A
