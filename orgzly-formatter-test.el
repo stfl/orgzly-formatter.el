@@ -730,6 +730,7 @@ claude --resume be0987e1-c562-4aad-a373-a06cb0628d7f
                "Diff 2 regression: Orgzly added \\n after :END: in a properties-only entry."
                "* TODO Some task
 SCHEDULED: <2026-03-16 Mo>
+:PROPERTIES:
 :CREATED:  [2026-03-16 Mo 08:30]
 :ID:       a335e133-26c3-4b3d-a6b5-05dc52790b50
 :END:
@@ -737,6 +738,7 @@ SCHEDULED: <2026-03-16 Mo>
 "
                "* TODO Some task
 SCHEDULED: <2026-03-16 Mo>
+:PROPERTIES:
 :CREATED:  [2026-03-16 Mo 08:30]
 :ID:       a335e133-26c3-4b3d-a6b5-05dc52790b50
 :END:
