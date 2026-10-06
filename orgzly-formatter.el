@@ -45,12 +45,21 @@
 ;;        The head is the heading line plus the planning line directly
 ;;        under it, if any.  When body text follows the head, the blank
 ;;        lines in between become exactly one: Orgzly's parser drops them
-;;        and its writer puts one back (org-java's
-;;        `OrgParserWriter.whiteSpacedHead', "Separate header and
-;;        content").  Not body text, and so left alone: a heading, a
-;;        planning line, a drawer (R2 covers its :END:), a CLOCK line and
-;;        a log note such as "- State ...", which Orgzly writes directly
-;;        under the head.
+;;        and its writer puts one back under the "Separate header and
+;;        content" setting.  Not body text, and so left alone: a heading,
+;;        a planning line, a drawer (R2 covers its :END:), a CLOCK line
+;;        and a log note such as "- State ...", which Orgzly writes
+;;        directly under the head.
+;;        Source, in github.com/orgzly-revived/org-java at e15645ee
+;;        (the fork Orgzly Revived builds on), under
+;;        src/main/java/com/orgzly/org/:
+;;          - parser/OrgSaxyParser.java, `trimContent' (through
+;;            OrgStringUtils.java, `trimLines'): drops the content's
+;;            leading blank lines;
+;;          - parser/OrgParserWriter.java, `whiteSpacedHead': writes one
+;;            blank line before the content unless it starts with
+;;            ":LOGBOOK:" or "CLOCK: ", `isLogNoteHeading' matches it, or
+;;            `lineStartswithDrawer' matches its first line.
 ;;
 ;;   WS.  Trailing whitespace removed from every line.
 ;;        Exception: a heading whose only payload is a TODO keyword plus a
