@@ -49,7 +49,8 @@
 ;;        content" setting.  Not body text, and so left alone: a heading,
 ;;        a planning line, a drawer (R2 covers its :END:), a CLOCK line
 ;;        and a log note such as "- State ...", which Orgzly writes
-;;        directly under the head.
+;;        directly under the head.  Case matters, as in org-java:
+;;        "Deadline:" and "- state" are body text.
 ;;        Source, in github.com/orgzly-revived/org-java at e15645ee
 ;;        (the fork Orgzly Revived builds on), under
 ;;        src/main/java/com/orgzly/org/:
@@ -301,23 +302,27 @@ the \"Separate header and content\" setting).
 
 Not body text, and so left alone: a heading (R1), a planning line, the
 end of the buffer, and the lines `orgzly-formatter--no-separator-re'
-matches, drawers among them (R2 handles the line after :END:)."
+matches, drawers among them (R2 handles the line after :END:).
+
+Matching is case-sensitive, as org-java's is: \"Deadline:\" or
+\"- state\" is body text."
   (save-excursion
     (goto-char (point-min))
-    (while (re-search-forward org-outline-regexp-bol nil t)
-      (forward-line 1)
-      (when (looking-at-p org-planning-line-re)
-        (forward-line 1))
-      (let ((head-end (point)))
-        (while (and (not (eobp)) (looking-at-p "[ \t]*$"))
+    (let ((case-fold-search nil))
+      (while (re-search-forward org-outline-regexp-bol nil t)
+        (forward-line 1)
+        (when (looking-at-p org-planning-line-re)
           (forward-line 1))
-        (unless (or (eobp)
-                    (org-at-heading-p)
-                    (looking-at-p org-planning-line-re)
-                    (looking-at-p orgzly-formatter--no-separator-re)
-                    (= (count-lines head-end (point)) 1))
-          (delete-region head-end (point))
-          (insert "\n"))))))
+        (let ((head-end (point)))
+          (while (and (not (eobp)) (looking-at-p "[ \t]*$"))
+            (forward-line 1))
+          (unless (or (eobp)
+                      (org-at-heading-p)
+                      (looking-at-p org-planning-line-re)
+                      (looking-at-p orgzly-formatter--no-separator-re)
+                      (= (count-lines head-end (point)) 1))
+            (delete-region head-end (point))
+            (insert "\n")))))))
 
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."

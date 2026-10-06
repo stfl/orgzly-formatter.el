@@ -885,6 +885,27 @@ body
 
 ")
 
+(ozfmt-deftest ozfmt/r5/lowercase-planning-is-body
+               "R5: Orgzly's planning match is case-sensitive, so \"Deadline:\" is
+body text and the blank line goes after the heading."
+               "* H
+Deadline: 15.10. an Kathy
+Details folgen
+"
+               "* H
+
+Deadline: 15.10. an Kathy
+Details folgen
+
+")
+
+(ert-deftest ozfmt/r5/lowercase-exceptions-are-body ()
+  "R5: org-java's prefix tests are case-sensitive, so lower-case lookalikes
+of a log note, a CLOCK line or :LOGBOOK: are body text."
+  (dolist (line '("- state machine" "clock: tower" ":logbook: x"))
+    (should (equal (ozfmt--format (concat "* H\n" line "\n"))
+                   (concat "* H\n\n" line "\n\n")))))
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A
