@@ -24,7 +24,9 @@
 ;;   R2.  One blank line between a drawer :END: and following body text.
 ;;        When an :END: line is immediately followed by non-blank body text
 ;;        (not a heading, not another drawer), one blank line is inserted.
-;;        A drawer that ends a section (no body follows) is left unchanged.
+;;        A drawer that ends a section (no body follows) is left unchanged,
+;;        and so is a drawer before the first heading: Orgzly keeps that
+;;        text as written.
 ;;        After the :PROPERTIES: drawer of an entry's head, R5 then sets
 ;;        the gap: exactly one blank line, or none before a line Orgzly
 ;;        writes directly under the head.
@@ -302,11 +304,17 @@ drawer, or EOF — those are covered by R3 and the EOF pass.
 
 Going through the parser (rather than matching `^:END:' by hand) means
 indented drawers are handled correctly and a literal `:END:' inside a
-code block is not mistaken for a drawer terminator."
+code block is not mistaken for a drawer terminator.
+
+Drawers before the first heading are left alone.  Orgzly keeps that
+text as written, trimming only blank lines at its ends (org-java's
+`OrgSaxyParser.setTrimmedPreface' and
+`OrgParserWriter.whiteSpacedFilePreface')."
   (let ((ends (org-element-map (org-element-parse-buffer)
                   '(drawer property-drawer)
                 (lambda (el)
-                  (when (zerop (or (org-element-property :post-blank el) 0))
+                  (when (and (org-element-lineage el '(headline))
+                             (zerop (or (org-element-property :post-blank el) 0)))
                     (copy-marker (org-element-property :end el)))))))
     (dolist (m ends)
       (save-excursion

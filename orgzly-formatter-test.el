@@ -546,6 +546,16 @@ body text
 * Next
 ")
 
+(ert-deftest ozfmt/r2/file-level-drawer-left-alone ()
+  "R2 leaves drawers before the first heading alone, as Orgzly does: it keeps
+the text before the first heading as written, trimming only blank lines
+at its ends (org-java `OrgSaxyParser.setTrimmedPreface',
+`OrgParserWriter.whiteSpacedFilePreface').  In the org repository Orgzly
+kept the line after a file-level :END: in all 901 rewrites, blank or not."
+  (dolist (input '(":PROPERTIES:\n:ID: x\n:END:\n#+title: T\n\n* H\n"
+                   ":PROPERTIES:\n:ID: x\n:END:\n\n#+title: T\n\n* H\n"))
+    (should (equal (ozfmt--format input) input))))
+
 ;;;; ── R4: planning keyword order ─────────────────────────────────────────────
 
 (ozfmt-deftest ozfmt/r4/reorder-scheduled-deadline
