@@ -1005,6 +1005,20 @@ body
 
 ")
 
+(ozfmt-deftest ozfmt/r5/diary-sexp-planning-left-alone
+               "R5: Org reads a diary sexp after SCHEDULED: as planning, Orgzly does
+not (no date for PLANNING_TIMES_P).  Moving the line would unschedule the
+entry in Org, so the entry is left alone."
+               "* TODO Monthly report
+SCHEDULED: <%%(diary-float t 4 2)>
+Write it up.
+"
+               "* TODO Monthly report
+SCHEDULED: <%%(diary-float t 4 2)>
+Write it up.
+
+")
+
 (ert-deftest ozfmt/r5/idempotent ()
   "R5: a second run over R5's output changes nothing."
   (let* ((input "* A

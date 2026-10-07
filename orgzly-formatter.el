@@ -61,6 +61,12 @@
 ;;        :PROPERTIES: drawer that ends up there joins the head.  A
 ;;        planning line after a blank line is body text.  Case matters,
 ;;        as in org-java: "Deadline:" and "- state" are body text.
+;;        Unlike org-java, R5 leaves an entry alone when Org reads the
+;;        line under its heading as planning and Orgzly does not, as
+;;        with a diary sexp (<%%(...)>): moving it would unschedule the
+;;        entry in Org.  Known limit: after two planning lines and a
+;;        :PROPERTIES: drawer, R5 reads only the first (as R4 does), so
+;;        surplus blank lines after the drawer's :END: stay.
 ;;        Source, in github.com/orgzly-revived/org-java at e15645ee
 ;;        (the fork Orgzly Revived builds on), under
 ;;        src/main/java/com/orgzly/org/:
@@ -381,17 +387,30 @@ under the \"Separate header and content\" setting), so:
   the end of the buffer are left alone.
 
 A planning line after a blank line is body text, to Org and to Orgzly.
-Matching is case-sensitive, as org-java's is: \"Deadline:\" or
-\"- state\" is body text."
+An entry whose planning line Org reads but Orgzly does not, such as
+\"SCHEDULED: <%%(diary-float t 4 2)>\", is left alone: moving that line
+would unschedule the entry in Org.  Matching is case-sensitive, as
+org-java's is: \"Deadline:\" or \"- state\" is body text."
   (save-excursion
     (goto-char (point-min))
     (let ((case-fold-search nil))
       (while (re-search-forward org-outline-regexp-bol nil t)
-        (forward-line 1)
-        (when (looking-at-p orgzly-formatter--planning-re)
-          (forward-line 1))
-        (orgzly-formatter--skip-property-drawer)
-        (orgzly-formatter--separate-head-from-body)))))
+        (let* ((el (org-element-at-point))
+               (org-planning (or (org-element-property :closed el)
+                                 (org-element-property :deadline el)
+                                 (org-element-property :scheduled el))))
+          (forward-line 1)
+          (cond
+           ((looking-at-p orgzly-formatter--planning-re)
+            (forward-line 1)
+            (orgzly-formatter--skip-property-drawer)
+            (orgzly-formatter--separate-head-from-body))
+           ;; Org reads the line as planning and Orgzly does not, as with
+           ;; a diary sexp: moving it would unschedule the entry in Org.
+           (org-planning)
+           (t
+            (orgzly-formatter--skip-property-drawer)
+            (orgzly-formatter--separate-head-from-body))))))))
 
 (defun orgzly-formatter--fix-eof ()
   "Ensure the buffer ends with exactly one blank line (two consecutive \\n)."
