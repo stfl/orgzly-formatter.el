@@ -4,37 +4,34 @@ This file provides guidance to Coding agents like Claude Code when working with 
 
 ## Commands
 
-All commands must be run inside the Nix dev shell via `nix develop --command <cmd>`,
-which provides `eask`, `just`, and `emacs` on PATH. This is also required for
-`git commit` since the pre-commit hooks invoke `eask`.
+`eask`, `just` and `emacs` must be on PATH. CI runs compile, lint, tests and
+the version check on every push and pull request.
 
 ```sh
 # Byte-compile the package
-nix develop --command just compile
+just compile
 
 # Run the full ERT test suite.  The `test' recipe runs `clean' first so
 # a stale `.elc' from a previous `just compile' can never shadow your
 # uncommitted edits to the `.el' source — `eask' picks `.elc' over `.el'
 # when both exist, which silently runs tests against old bytecode.
-nix develop --command just test
+just test
 
 # Run both (default)
-nix develop --command just
+just
 
 # Run a subset of tests by name prefix
-nix develop --command emacs -batch -Q -L . \
+emacs -batch -Q -L . \
   -l orgzly-formatter.el \
   -l orgzly-formatter-test.el \
   --eval '(ert-run-tests-batch "ozfmt/regression")'
 
 # Lint with package-lint
-nix develop --command just lint
+just lint
 
 # Clean byte-compiled output
-nix develop --command just clean
+just clean
 
-# Commit (pre-commit hooks require eask)
-nix develop --command git commit
 ```
 
 ## Releasing / version bumps
